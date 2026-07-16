@@ -319,11 +319,10 @@ export function ToolWorkflowDialog({ tool, open, onOpenChange }: ToolWorkflowDia
   };
 
   useEffect(() => {
-    if (open) resetState();
     return () => {
       if (timerRef.current) window.clearInterval(timerRef.current);
     };
-  }, [tool?.id, open]);
+  }, []);
 
   const allowMultiple = tool?.configKind === "merge" || tool?.id === "jpg-to-pdf";
   const canStart = useMemo(() => {

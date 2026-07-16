@@ -29,6 +29,7 @@ type ContactFormProps = {
 
 export function ContactForm({ selectedEnquiryType }: ContactFormProps) {
   const [completed, setCompleted] = useState(false);
+  const [messageLength, setMessageLength] = useState(0);
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
     defaultValues: defaultContactValues,
@@ -36,14 +37,13 @@ export function ContactForm({ selectedEnquiryType }: ContactFormProps) {
     mode: "onSubmit",
   });
 
-  const messageLength = form.watch("message").length;
-
   useEffect(() => {
     form.setValue("enquiryType", selectedEnquiryType, { shouldValidate: completed ? false : undefined });
   }, [completed, form, selectedEnquiryType]);
 
   const resetForm = () => {
     form.reset({ ...defaultContactValues, enquiryType: selectedEnquiryType });
+    setMessageLength(0);
     setCompleted(false);
     window.requestAnimationFrame(() => form.setFocus("fullName"));
   };
@@ -168,7 +168,15 @@ export function ContactForm({ selectedEnquiryType }: ContactFormProps) {
                     </span>
                   </div>
                   <FormControl>
-                    <Textarea maxLength={1500} className="min-h-36 resize-y" {...field} />
+                    <Textarea
+                      maxLength={1500}
+                      className="min-h-36 resize-y"
+                      {...field}
+                      onChange={(event) => {
+                        setMessageLength(event.target.value.length);
+                        field.onChange(event);
+                      }}
+                    />
                   </FormControl>
                   <FormDescription>Do not include sensitive, confidential or personal document information.</FormDescription>
                   <FormMessage />

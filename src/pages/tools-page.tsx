@@ -101,7 +101,12 @@ export function ToolsPage() {
       <ToolCategoryOverview onSelectCategory={selectOverviewCategory} />
       <ToolsCta />
 
-      <ToolWorkflowDialog tool={selectedTool} open={dialogOpen} onOpenChange={setDialogOpen} />
+      <ToolWorkflowDialog
+        key={`${selectedTool?.id ?? "empty"}-${dialogOpen ? "open" : "closed"}`}
+        tool={selectedTool}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
     </>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,17 +21,14 @@ type MobileNavigationProps = {
 };
 
 export function MobileNavigation({ children, items }: MobileNavigationProps) {
-  const [open, setOpen] = useState(false);
+  const [openPath, setOpenPath] = useState<string | null>(null);
   const location = useLocation();
-
-  useEffect(() => {
-    setOpen(false);
-  }, [location.pathname]);
+  const open = openPath === location.pathname;
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet open={open} onOpenChange={(nextOpen) => setOpenPath(nextOpen ? location.pathname : null)}>
       <SheetTrigger asChild>{children}</SheetTrigger>
-      <SheetContent side="right" className="w-80">
+      <SheetContent side="right" className="w-80" onEscapeKeyDown={() => setOpenPath(null)}>
         <SheetHeader>
           <SheetTitle>
             <span className="paperlane-wordmark text-4xl leading-none">Paperlane</span>
@@ -43,7 +40,7 @@ export function MobileNavigation({ children, items }: MobileNavigationProps) {
               key={item.to}
               to={item.to}
               end={item.to === "/"}
-              onClick={() => setOpen(false)}
+              onClick={() => setOpenPath(null)}
               className={({ isActive }) =>
                 cn(
                   "rounded-md px-3 py-2 text-base font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -55,7 +52,7 @@ export function MobileNavigation({ children, items }: MobileNavigationProps) {
             </NavLink>
           ))}
           <Button asChild className="mt-4 justify-center">
-            <NavLink to="/tools" onClick={() => setOpen(false)}>
+            <NavLink to="/tools" onClick={() => setOpenPath(null)}>
               Open Workspace
             </NavLink>
           </Button>

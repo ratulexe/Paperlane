@@ -84,6 +84,7 @@ export function WorkspacePreview() {
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState("");
   const [isSimulating, setIsSimulating] = useState(false);
+  const [activeTab, setActiveTab] = useState("upload");
 
   useEffect(() => {
     return () => {
@@ -188,11 +189,11 @@ export function WorkspacePreview() {
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="upload">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="upload">Upload</TabsTrigger>
-            <TabsTrigger value="recent">Recent</TabsTrigger>
-            <TabsTrigger value="ai">AI Tools</TabsTrigger>
+            <TabsTrigger value="upload" onClick={() => setActiveTab("upload")}>Upload</TabsTrigger>
+            <TabsTrigger value="recent" onClick={() => setActiveTab("recent")}>Recent</TabsTrigger>
+            <TabsTrigger value="ai" onClick={() => setActiveTab("ai")}>AI Tools</TabsTrigger>
           </TabsList>
 
           <TabsContent value="upload" className="mt-4 space-y-4">
