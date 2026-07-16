@@ -1,70 +1,55 @@
 # Paperlane
 
-## Overview
+Paperlane is a frontend concept exploring clearer and more approachable document workflows. This phase migrates the project foundation from a static HTML/CSS/JavaScript site to a modern React application.
 
-Paperlane is a privacy-conscious document productivity frontend concept created using AI-assisted development. It presents a polished static website for exploring document workflow ideas without implementing real document processing.
+## Stack
 
-## Tagline
-
-A smoother way to work with documents.
-
-## Project Category
-
-Privacy-first document productivity SaaS concept.
-
-## Pages
-
-- Home
-- About
-- Tools
-- Privacy
-- Contact
-
-## Features
-
-- Responsive multi-page website
-- Document-tool catalogue
-- Category filtering
-- Simulated tool dialog
-- Simulated upload interface
-- Privacy approach page
-- Accessible FAQ accordions
-- Demo contact form
-- Mobile navigation
-- Responsive design
-- Reduced-motion support
-
-## Technologies
-
-- HTML5
-- CSS3
-- Vanilla JavaScript
+- Vite
+- React
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- React Router
+- Lucide React
+- Manrope
+- Style Script
 
 ## Typography
 
-- Style Script for the Paperlane logo
-- Manrope for website and interface text
+- Style Script is used only for the Paperlane wordmark.
+- Manrope is used for all other website and interface text.
 
-## Running Locally
+## Routes
 
-1. Open the project folder in VS Code.
-2. Install or use the Live Server extension.
-3. Open the root `index.html` file with Live Server.
-4. Navigate through the clean directory routes: `/`, `/about/`, `/tools/`, `/privacy/` and `/contact/`.
+- `/`
+- `/about`
+- `/tools`
+- `/privacy`
+- `/contact`
+- `*` Not Found route
+
+## Development
+
+```bash
+npm run dev
+```
+
+## Production Build
+
+```bash
+npm run build
+```
+
+## Preview
+
+```bash
+npm run preview
+```
 
 ## Important Limitation
 
-Paperlane is a frontend product concept. The document tools do not perform real processing, files are not uploaded, the contact form does not transmit data, and no backend or database is included.
+Paperlane is currently a frontend concept. It does not perform real document processing, does not upload files, does not send document-upload network requests, and does not include a backend or database.
 
-## AI-Assisted Development
+## Current Phase
 
-AI tools were used to assist with website planning, structure, design and code generation, followed by manual review and testing.
-
-## Future Scope
-
-- Real local document processing
-- Secure backend architecture
-- User-controlled file retention
-- Account system
-- Accessibility testing
-- Production privacy documentation
+Phase 1 establishes the Vite, React, TypeScript, Tailwind CSS, shadcn/ui and React Router foundation. Full page redesign and content migration will happen in later phases.

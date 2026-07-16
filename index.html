@@ -1,214 +1,31 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Explore Paperlane, a privacy-conscious document productivity concept featuring simple tools for organising, converting and understanding documents.">
-  <meta name="theme-color" content="#fbf8f4">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Paperlane | A Smoother Way to Work With Documents">
-  <meta property="og:description" content="Explore Paperlane, a privacy-conscious document productivity concept featuring simple tools for organising, converting and understanding documents.">
-  <meta property="og:site_name" content="Paperlane">
-  <title>Paperlane | A Smoother Way to Work With Documents</title>
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Style+Script&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css">
-</head>
-<body>
-  <a class="skip-link" href="#main">Skip to main content</a>
-
-  <header class="site-header" data-header>
-    <div class="container nav-shell">
-      <a class="brand" href="./" aria-label="Paperlane home">
-        <span class="brand-name">Paperlane</span>
-      </a>
-
-      <button class="menu-toggle" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="primary-navigation" data-menu-toggle>
-        <span class="sr-only">Open navigation</span>
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-
-      <nav class="primary-nav" id="primary-navigation" aria-label="Primary navigation" data-nav>
-        <a href="./">Home</a>
-        <a href="about/">About</a>
-        <a href="tools/">Tools</a>
-        <a href="privacy/">Privacy</a>
-        <a href="contact/">Contact</a>
-        <a class="btn btn-small" href="tools/" data-tooltip="Open the concept tool gallery">Try Paperlane</a>
-      </nav>
-    </div>
-  </header>
-
-  <main id="main">
-    <section class="hero-section section-pad">
-      <div class="container hero-grid">
-        <div class="hero-copy reveal">
-          <p class="eyebrow">Product concept for document teams</p>
-          <h1>A smoother way to work with documents.</h1>
-          <p class="hero-text">Paperlane imagines a calm, elegant workspace for everyday document tasks, from organizing files to preparing polished outputs.</p>
-          <div class="hero-actions">
-            <a class="btn" href="tools/" data-tooltip="View concept document workflows">Explore tools</a>
-            <a class="btn btn-secondary" href="about/">Learn the idea</a>
-          </div>
-        </div>
-
-        <div class="hero-visual reveal" aria-label="Paperlane concept interface preview">
-          <div class="workspace-card">
-            <div class="window-dots" aria-hidden="true">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-            <div class="upload-demo" data-home-upload>
-              <label class="upload-concept" for="home-upload-input" tabindex="0" data-home-drop-zone>
-                <span class="upload-icon" aria-hidden="true">+</span>
-                <strong>Drop documents</strong>
-                <small>Demo interface only — the selected file remains on your device.</small>
-              </label>
-              <input class="sr-only" id="home-upload-input" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png,text/plain" data-home-file-input>
-              <div class="home-file-panel" data-home-file-panel hidden>
-                <span class="file-kind" data-home-file-icon aria-hidden="true">DOC</span>
-                <div>
-                  <strong data-home-file-name></strong>
-                  <small data-home-file-meta></small>
-                </div>
-                <button class="btn btn-ghost btn-small" type="button" data-home-remove-file>Remove file</button>
-              </div>
-              <p class="form-note" data-home-upload-status>Accepts PDF, DOC, DOCX, JPG, JPEG, PNG and TXT for interface demonstration.</p>
-            </div>
-            <div class="status-list" aria-label="Example workflow states">
-              <div><span></span>Combine proposal pages</div>
-              <div><span></span>Compress client packet</div>
-              <div><span></span>Share polished summary</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section-pad">
-      <div class="container">
-        <div class="section-heading reveal">
-          <p class="eyebrow">Foundation preview</p>
-          <h2>Simple pages, consistent structure, clear product boundaries.</h2>
-        </div>
-
-        <div class="feature-grid">
-          <article class="feature-card reveal">
-            <span class="card-icon" aria-hidden="true">01</span>
-            <h3>Polished static pages</h3>
-            <p>Every page shares the same navigation, footer, responsive layout, and reusable visual system.</p>
-          </article>
-          <article class="feature-card reveal">
-            <span class="card-icon" aria-hidden="true">02</span>
-            <h3>Concept-safe tooling</h3>
-            <p>The interface describes possible workflows without claiming real file encryption, deletion, or local processing.</p>
-          </article>
-          <article class="feature-card reveal">
-            <span class="card-icon" aria-hidden="true">03</span>
-            <h3>Original identity</h3>
-            <p>A warm, premium visual language blends paper-like surfaces with navy text, indigo accents, and coral details.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section-pad soft-band">
-      <div class="container">
-        <div class="section-heading reveal">
-          <p class="eyebrow">Component system</p>
-          <h2>A quieter interface made from purposeful primitives.</h2>
-        </div>
-
-        <div class="tabs reveal" data-tabs>
-          <div class="tabs-list" role="tablist" aria-label="Paperlane interface principles">
-            <button class="tabs-trigger is-active" id="tab-workspace" type="button" role="tab" aria-selected="true" aria-controls="panel-workspace" data-tab-target="panel-workspace">Workspace</button>
-            <button class="tabs-trigger" id="tab-review" type="button" role="tab" aria-selected="false" aria-controls="panel-review" data-tab-target="panel-review">Review</button>
-            <button class="tabs-trigger" id="tab-share" type="button" role="tab" aria-selected="false" aria-controls="panel-share" data-tab-target="panel-share">Share</button>
-          </div>
-          <div class="tabs-panel is-active" id="panel-workspace" role="tabpanel" aria-labelledby="tab-workspace">
-            <span class="badge badge-secondary">Calm setup</span>
-            <h3>Start from a clean document lane.</h3>
-            <p>Warm surfaces, compact controls and restrained borders keep attention on the imagined workflow rather than decoration.</p>
-          </div>
-          <div class="tabs-panel" id="panel-review" role="tabpanel" aria-labelledby="tab-review" hidden>
-            <span class="badge badge-secondary">Clear states</span>
-            <h3>Preview each action before it feels final.</h3>
-            <p>Paperlane uses direct labels, small confirmation surfaces and concept-safe language for every demonstration.</p>
-          </div>
-          <div class="tabs-panel" id="panel-share" role="tabpanel" aria-labelledby="tab-share" hidden>
-            <span class="badge badge-secondary">Polished output</span>
-            <h3>Make the next step obvious.</h3>
-            <p>The design system favors familiar buttons, cards, tabs and notices that can scale into richer pages later.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section-pad">
-      <div class="container policy-stack">
-        <div class="section-heading reveal">
-          <p class="eyebrow">Quick answers</p>
-          <h2>How the Paperlane demo behaves.</h2>
-        </div>
-        <div class="accordion reveal" data-accordion>
-          <article class="accordion-item">
-            <h2><button class="accordion-trigger" type="button" aria-expanded="true" aria-controls="home-faq-files">Does the homepage upload area process files?<span aria-hidden="true">+</span></button></h2>
-            <div class="accordion-panel" id="home-faq-files"><p>No. It only previews file-selection interface behavior and does not upload, read or process document contents.</p></div>
-          </article>
-          <article class="accordion-item">
-            <h2><button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="home-faq-tools">Are the tools functional?<span aria-hidden="true">+</span></button></h2>
-            <div class="accordion-panel" id="home-faq-tools"><p>The tools are product concept interfaces. They demonstrate clear workflow states without performing real PDF conversion or document processing.</p></div>
-          </article>
-          <article class="accordion-item">
-            <h2><button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="home-faq-privacy">Why show privacy notices?<span aria-hidden="true">+</span></button></h2>
-            <div class="accordion-panel" id="home-faq-privacy"><p>Paperlane is designed around transparent product communication, so demo notices explain what is and is not happening.</p></div>
-          </article>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <div class="container footer-grid">
-      <div class="footer-brand">
-        <a class="brand" href="./" aria-label="Paperlane home">
-          <span class="brand-name">Paperlane</span>
-        </a>
-        <p>A smoother way to work with documents. Paperlane is an AI-assisted frontend product concept for an internship website project.</p>
-      </div>
-      <nav aria-label="Product links">
-        <h2>Product</h2>
-        <a href="tools/">Tools</a>
-        <a href="tools/">Try Paperlane</a>
-        <a href="privacy/">Concept privacy</a>
-      </nav>
-      <nav aria-label="Company links">
-        <h2>Company</h2>
-        <a href="about/">About</a>
-        <a href="contact/">Contact</a>
-      </nav>
-      <nav aria-label="Privacy links">
-        <h2>Privacy</h2>
-        <a href="privacy/">Privacy Approach</a>
-        <a href="privacy/#privacy-faq">FAQ</a>
-      </nav>
-      <div class="social-links" aria-label="Disabled social media placeholders">
-        <h2>Social</h2>
-        <span>LinkedIn placeholder disabled</span>
-        <span>X placeholder disabled</span>
-        <span>Dribbble placeholder disabled</span>
-      </div>
-    </div>
-    <div class="container footer-bottom">
-      <p>&copy; <span data-year></span> Paperlane. Product concept only.</p>
-    </div>
-  </footer>
-
-  <script src="assets/js/script.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Paperlane is a frontend concept exploring clearer and more approachable document workflows."
+    />
+    <meta name="theme-color" content="#fbf8f4" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Paperlane | A Smoother Way to Work With Documents" />
+    <meta
+      property="og:description"
+      content="Paperlane is a frontend concept exploring clearer and more approachable document workflows."
+    />
+    <meta property="og:site_name" content="Paperlane" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Style+Script&display=swap"
+      rel="stylesheet"
+    />
+    <title>Paperlane | A Smoother Way to Work With Documents</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
