@@ -1,0 +1,173 @@
+import type { LucideIcon } from "lucide-react";
+import {
+  CheckCircle2,
+  CircleDot,
+  Eye,
+  FileCheck2,
+  FileSearch,
+  Layers3,
+  MousePointer2,
+  ScanSearch,
+  ShieldCheck,
+  Sparkles,
+  TextSearch,
+} from "lucide-react";
+
+export type RecentDocument = {
+  fileName: string;
+  lastAction: string;
+  status: "Ready" | "Draft" | "Demo";
+};
+
+export type AiAction = {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+};
+
+export type ProcessStep = {
+  number: string;
+  title: string;
+  description: string;
+};
+
+export type Principle = {
+  title: string;
+  icon: LucideIcon;
+};
+
+export type Benefit = {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+};
+
+export type ConceptStory = {
+  role: string;
+  initials: string;
+  quote: string;
+};
+
+export type FaqItem = {
+  question: string;
+  answer: string;
+};
+
+export const supportPoints = ["Clear workflows", "Local demo interactions", "No unnecessary complexity"];
+
+export const recentDocuments: RecentDocument[] = [
+  { fileName: "Project brief.pdf", lastAction: "Compressed", status: "Ready" },
+  { fileName: "Research notes.docx", lastAction: "Organised", status: "Draft" },
+  { fileName: "Receipt scan.jpg", lastAction: "OCR concept", status: "Demo" },
+];
+
+export const aiActions: AiAction[] = [
+  {
+    title: "Summarise document",
+    description: "Create a concise overview of longer content.",
+    icon: Sparkles,
+  },
+  {
+    title: "Extract key details",
+    description: "Identify names, dates and important information.",
+    icon: TextSearch,
+  },
+  {
+    title: "Recognise scanned text",
+    description: "Demonstrate an OCR-oriented workflow.",
+    icon: ScanSearch,
+  },
+];
+
+export const processSteps: ProcessStep[] = [
+  {
+    number: "01",
+    title: "Choose a tool",
+    description: "Select the document action that matches your task.",
+  },
+  {
+    number: "02",
+    title: "Add your document",
+    description: "Choose a local file through the demonstration interface.",
+  },
+  {
+    number: "03",
+    title: "Review the workflow",
+    description: "See how a transparent document process could be presented.",
+  },
+];
+
+export const privacyPrinciples: Principle[] = [
+  { title: "Explain before processing", icon: Eye },
+  { title: "Request only what is necessary", icon: FileCheck2 },
+  { title: "Keep users in control", icon: MousePointer2 },
+  { title: "Avoid hidden actions", icon: ShieldCheck },
+];
+
+export const benefits: Benefit[] = [
+  {
+    title: "Consistent workflows",
+    description: "Every tool follows a familiar structure.",
+    icon: Layers3,
+  },
+  {
+    title: "Focused interface",
+    description: "The user sees only what is relevant to the selected action.",
+    icon: CircleDot,
+  },
+  {
+    title: "Responsible AI concepts",
+    description: "AI-assisted workflows clearly communicate their limitations.",
+    icon: FileSearch,
+  },
+  {
+    title: "Responsive by design",
+    description: "The interface remains usable across desktop and mobile devices.",
+    icon: CheckCircle2,
+  },
+];
+
+export const conceptStories: ConceptStory[] = [
+  {
+    role: "Student",
+    initials: "ST",
+    quote: "I need one clear place for combining assignment pages and preparing them for submission.",
+  },
+  {
+    role: "Freelancer",
+    initials: "FR",
+    quote: "I want document tools that explain what will happen before I select a client file.",
+  },
+  {
+    role: "Small business owner",
+    initials: "SB",
+    quote: "I need repeatable workflows for invoices, forms and scanned paperwork.",
+  },
+];
+
+export const faqItems: FaqItem[] = [
+  {
+    question: "What is Paperlane?",
+    answer: "Paperlane is a frontend product concept exploring a clearer, more consistent document productivity experience.",
+  },
+  {
+    question: "Does Paperlane process real documents?",
+    answer: "No. The current website demonstrates interface behaviour only. Selected files are not uploaded, converted, analysed or stored.",
+  },
+  {
+    question: "Which document tools are represented?",
+    answer: "The concept includes organisation, conversion, optimisation, security and AI-assisted document workflows.",
+  },
+  {
+    question: "Is an account required?",
+    answer: "No account system exists in the current frontend demonstration.",
+  },
+  {
+    question: "Is Paperlane free?",
+    answer: "No production pricing or payment system has been implemented. Any future pricing shown would be part of the product concept.",
+  },
+  {
+    question: "How does Paperlane approach privacy?",
+    answer: "The design focuses on explaining actions clearly, minimising unnecessary data collection and giving users visible control over document workflows.",
+  },
+];
