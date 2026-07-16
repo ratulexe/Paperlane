@@ -1,14 +1,36 @@
+import { ConceptNotice } from "@/components/privacy/concept-notice";
+import { DataTransparency } from "@/components/privacy/data-transparency";
+import { DocumentLifecycle } from "@/components/privacy/document-lifecycle";
+import { PrivacyCta } from "@/components/privacy/privacy-cta";
+import { PrivacyFaq } from "@/components/privacy/privacy-faq";
+import { PrivacyHero } from "@/components/privacy/privacy-hero";
+import { PrivacyPrinciples } from "@/components/privacy/privacy-principles";
+import { ResponsibleAi } from "@/components/privacy/responsible-ai";
+import { PageBreadcrumb } from "@/components/shared/page-breadcrumb";
+import { usePageMetadata } from "@/lib/use-page-metadata";
+
 export function PrivacyPage() {
+  usePageMetadata({
+    title: "Privacy Approach | Paperlane",
+    description: "Understand the privacy principles behind Paperlane and how transparent document workflows should be designed.",
+  });
+
+  const scrollToPrinciples = () => {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById("privacy-principles")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+  };
+
   return (
-    <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:py-24">
-      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">Privacy approach</p>
-      <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-        Privacy should be understandable.
-      </h1>
-      <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
-        Paperlane is currently a frontend concept. It does not provide production file storage, processing, security
-        services or account infrastructure.
-      </p>
-    </section>
+    <>
+      <PageBreadcrumb current="Privacy" />
+      <PrivacyHero onViewPrinciples={scrollToPrinciples} />
+      <ConceptNotice />
+      <PrivacyPrinciples />
+      <DocumentLifecycle />
+      <DataTransparency />
+      <ResponsibleAi />
+      <PrivacyFaq />
+      <PrivacyCta />
+    </>
   );
 }

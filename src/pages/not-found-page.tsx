@@ -1,7 +1,13 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { usePageMetadata } from "@/lib/use-page-metadata";
 
 export function NotFoundPage() {
+  usePageMetadata({
+    title: "Page Not Found | Paperlane",
+    description: "The requested Paperlane page could not be found.",
+  });
+
   return (
     <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:py-24">
       <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">404</p>

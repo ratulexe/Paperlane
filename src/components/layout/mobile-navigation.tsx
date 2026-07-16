@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from "react";
-import { NavLink } from "react-router-dom";
+import { useEffect, useState, type ReactNode } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -22,6 +22,11 @@ type MobileNavigationProps = {
 
 export function MobileNavigation({ children, items }: MobileNavigationProps) {
   const [open, setOpen] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

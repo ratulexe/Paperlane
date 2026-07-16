@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import { PageLayout } from "@/components/layout/page-layout";
+import { ScrollToTop } from "@/components/shared/scroll-to-top";
 import { AboutPage } from "@/pages/about-page";
 import { ContactPage } from "@/pages/contact-page";
 import { HomePage } from "@/pages/home-page";
@@ -10,6 +11,7 @@ import { ToolsPage } from "@/pages/tools-page";
 export default function App() {
   return (
     <PageLayout>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
