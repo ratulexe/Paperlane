@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Paperlane favicon">
+  <defs>
+    <linearGradient id="paperlane-gradient" x1="10" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6f4ff2"/>
+      <stop offset="1" stop-color="#ff8f7d"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="#fbf7f2"/>
+  <path d="M18 14h24l8 8v28H18V14Z" fill="url(#paperlane-gradient)"/>
+  <path d="M42 14v9h8" fill="#f8d8ce"/>
+  <path d="M26 33c4-7 14-8 18-1-5-2-10 0-14 6l-4 6h-6l6-11Z" fill="#ffffff"/>
+</svg>
