@@ -12,7 +12,8 @@ import { usePageMetadata } from "@/lib/use-page-metadata";
 export function AboutPage() {
   usePageMetadata({
     title: "About Paperlane | A Better Document Experience",
-    description: "Learn about Paperlane, a document productivity concept designed around simplicity, transparency, accessibility and responsible AI.",
+    description:
+      "Learn about Paperlane, a document productivity concept designed around simplicity, local processing transparency, accessibility and responsible AI.",
   });
 
   return (

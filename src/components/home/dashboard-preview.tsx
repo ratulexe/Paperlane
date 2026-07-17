@@ -24,8 +24,8 @@ import { dashboardRows, sidebarItems } from "@/data/tools";
 import { cn } from "@/lib/utils";
 
 function statusVariant(status: string): "default" | "secondary" | "outline" {
-  if (status === "Ready") return "default";
-  if (status === "Demo") return "secondary";
+  if (status === "Local") return "default";
+  if (status === "Concept") return "secondary";
   return "outline";
 }
 
@@ -33,8 +33,8 @@ export function DashboardPreview() {
   return (
     <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 md:py-16">
       <SectionHeading
-        title="A workspace view built for scanning."
-        description="Product interface concept"
+        title="A consistent workspace for every workflow."
+        description="A later product view showing categories, recent actions, local-processing state and concept status."
       />
       <Card className="overflow-hidden shadow-sm">
         <CardContent className="grid gap-0 p-0 lg:grid-cols-[180px_minmax(0,1fr)_220px]">
@@ -62,7 +62,7 @@ export function DashboardPreview() {
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Document workflows</h3>
-                <p className="text-sm text-muted-foreground">Example rows only. No files are stored.</p>
+                <p className="text-sm text-muted-foreground">Example workspace data. No files are stored.</p>
               </div>
               <Badge variant="secondary">Product interface concept</Badge>
             </div>
@@ -121,12 +121,12 @@ export function DashboardPreview() {
               </CardHeader>
               <CardContent>
                 <div className="mb-2 flex items-center justify-between text-sm">
-                  <span className="font-medium">2.4 GB of 10 GB</span>
-                  <span className="text-muted-foreground">24%</span>
+                  <span className="font-medium">Local merge workflow</span>
+                  <span className="text-muted-foreground">68%</span>
                 </div>
-                <Progress value={24} />
+                <Progress value={68} />
                 <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                  Storage values are interface examples, not real account data.
+                  Workflow progress is example workspace data, not a stored account history.
                 </p>
               </CardContent>
             </Card>

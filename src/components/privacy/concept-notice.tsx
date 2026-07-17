@@ -7,7 +7,7 @@ export function ConceptNotice() {
       <ConceptAlert
         icon={ShieldAlert}
         title="Frontend concept notice"
-        description="Paperlane is currently a frontend demonstration. It does not upload, store, convert, analyse or transmit selected documents."
+        description="Paperlane includes selected browser-local document tools and additional concept previews. Functional tools do not upload files to a Paperlane server, and concept previews do not process or create output files."
       />
     </section>
   );

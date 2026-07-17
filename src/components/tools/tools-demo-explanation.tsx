@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 const demoSteps = [
   {
     title: "Select locally",
-    description: "The browser only displays basic file details such as name, type and size.",
+    description: "Choose files in the browser. Functional tools read file bytes locally; concept previews show file details only.",
     icon: FileCheck2,
   },
   {
@@ -15,8 +15,8 @@ const demoSteps = [
     icon: Settings2,
   },
   {
-    title: "Simulate the interaction",
-    description: "See interface progress without real upload, conversion or processing.",
+    title: "Run or preview",
+    description: "Use local output generation where supported, or review a concept interaction with no output file.",
     icon: MousePointer2,
   },
 ];
@@ -25,8 +25,8 @@ export function ToolsDemoExplanation() {
   return (
     <section id="demo-explanation" className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 md:py-16">
       <SectionHeading
-        eyebrow="Frontend demonstration"
-        title="Explore the workflow without sending a document anywhere."
+        eyebrow="Workflow model"
+        title="Local tools and concept previews stay visibly separate."
       />
       <div className="grid gap-4 md:grid-cols-3">
         {demoSteps.map((step) => {
@@ -45,8 +45,8 @@ export function ToolsDemoExplanation() {
       <Alert className="mt-5">
         <AlertCircle className="h-4 w-4" aria-hidden="true" />
         <AlertDescription>
-          A production document platform would require carefully designed processing, storage, security, retention and
-          privacy systems. Those systems are not included in this project.
+          The six supported tools run in browser memory. A production document platform would still require broader
+          security, privacy, retention, infrastructure and legal review.
         </AlertDescription>
       </Alert>
     </section>

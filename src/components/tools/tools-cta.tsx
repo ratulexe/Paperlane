@@ -11,7 +11,8 @@ export function ToolsCta() {
           <div className="max-w-2xl">
             <h2 className="text-3xl font-bold tracking-tight text-foreground">Have a document workflow in mind?</h2>
             <p className="mt-3 text-base leading-7 text-muted-foreground">
-              Paperlane is a developing frontend concept. Share the kind of document tool you would find useful.
+              Paperlane pairs selected browser-local PDF tools with a broader product concept. Share the kind of
+              document workflow you would find useful next.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

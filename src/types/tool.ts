@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 export type ToolCategory = "organise" | "convert" | "optimise" | "ai" | "security";
 
 export type ToolStatusBadge = "popular" | "ai" | "new" | "none";
+export type ToolImplementationStatus = "functional" | "concept";
 
 export type AcceptedFileType = {
   label: string;
@@ -40,6 +41,7 @@ export type DocumentTool = {
   workflowSteps: [string, string, string];
   availableInDemo: boolean;
   configKind: ToolConfigKind;
+  implementationStatus: ToolImplementationStatus;
 };
 
 export type SelectedDemoFile = {

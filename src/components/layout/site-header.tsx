@@ -1,4 +1,4 @@
-import { FileText, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
 import { Button } from "@/components/ui/button";
@@ -22,8 +22,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/88">
       <div className="mx-auto flex min-h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <NavLink to="/" className="flex items-center gap-2" aria-label="Paperlane home">
-          <FileText className="h-5 w-5 text-primary" aria-hidden="true" />
+        <NavLink to="/" className="flex items-center" aria-label="Paperlane home">
           <span className="paperlane-wordmark text-4xl leading-none text-foreground">Paperlane</span>
         </NavLink>
 

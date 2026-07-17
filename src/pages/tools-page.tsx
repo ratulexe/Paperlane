@@ -25,7 +25,8 @@ export function ToolsPage() {
 
   usePageMetadata({
     title: "Document Tools | Paperlane",
-    description: "Explore Paperlane's frontend concept collection of document organisation, conversion, optimisation, AI and security workflows.",
+    description:
+      "Explore Paperlane's browser-local PDF tools and concept previews for document organisation, conversion, optimisation, AI and security workflows.",
   });
 
   const filteredTools = useMemo(() => {
@@ -72,9 +73,9 @@ export function ToolsPage() {
       <section ref={catalogueRef} className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 md:py-16">
         <div className="mb-8">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-primary">Tool catalogue</p>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Choose a concept workflow.</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Choose a document workflow.</h2>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-            Filter, search and open a reusable dialog to see how each document workflow could be presented.
+            Filter, search and open each tool to process locally where supported or preview the intended interface.
           </p>
         </div>
         <ToolFilterBar

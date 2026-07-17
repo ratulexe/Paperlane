@@ -63,7 +63,7 @@ export function AboutHero() {
     <PageHero
       badge="About Paperlane"
       title="Documents should feel manageable, not overwhelming."
-      description="Paperlane is a frontend product concept exploring how everyday document tools can become easier to understand, more consistent and more transparent."
+      description="Paperlane is a frontend product concept with selected browser-local document tools alongside additional interface previews."
       visual={<AboutHeroVisual />}
       actions={
         <>

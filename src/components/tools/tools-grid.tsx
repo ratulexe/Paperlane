@@ -17,7 +17,7 @@ export function ToolsGrid({ tools, onOpenTool, onClearSearch, onShowAll }: Tools
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {tools.map((tool) => (
-        <ToolCard key={tool.id} tool={tool} onOpen={onOpenTool} />
+        <ToolCard key={tool.id} tool={tool} onOpen={onOpenTool} disabled={tool.implementationStatus !== "functional"} />
       ))}
     </div>
   );

@@ -1,4 +1,4 @@
-import { ArrowRight, Send } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,24 +10,22 @@ export function FinalCtaSection() {
         <CardContent className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:justify-between lg:p-8">
           <div className="max-w-2xl">
             <h2 className="text-3xl font-bold tracking-tight text-foreground">
-              Give every document a clearer direction.
+              Everything you need, without leaving your browser.
             </h2>
             <p className="mt-3 text-base leading-7 text-muted-foreground">
-              Explore a product concept built around simpler workflows and transparent interaction design.
+              Start with a browser-local PDF tool or explore Paperlane's wider collection of document-workflow
+              concepts.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Button asChild>
-              <Link to="/tools">
-                Browse All Tools
+              <a href="#homepage-tools">
+                Open Document Tools
                 <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-              </Link>
+              </a>
             </Button>
             <Button asChild variant="outline">
-              <Link to="/contact">
-                Contact Paperlane
-                <Send className="ml-2 h-4 w-4" aria-hidden="true" />
-              </Link>
+              <Link to="/privacy">Read the Privacy Approach</Link>
             </Button>
           </div>
         </CardContent>

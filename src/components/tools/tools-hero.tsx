@@ -21,8 +21,8 @@ export function ToolsHero({ onBrowseTools, onShowDemo }: ToolsHeroProps) {
           Everything your documents need, in one lane.
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-          Explore a consistent collection of document workflows for organising, converting, optimising and
-          understanding files.
+          Explore a consistent collection of document workflows, including six browser-local tools and clearly
+          labelled concept previews.
         </p>
         <div className="mt-7 flex flex-wrap gap-3">
           <Button onClick={onBrowseTools}>
@@ -35,7 +35,8 @@ export function ToolsHero({ onBrowseTools, onShowDemo }: ToolsHeroProps) {
         </div>
         <Alert className="mt-6 max-w-2xl">
           <AlertDescription>
-            Paperlane is a frontend demonstration. Selected files are not uploaded, converted, analysed or stored.
+            Functional tools process selected files in your browser and do not upload them to a Paperlane server.
+            Concept previews do not create output files.
           </AlertDescription>
         </Alert>
       </div>
@@ -44,8 +45,8 @@ export function ToolsHero({ onBrowseTools, onShowDemo }: ToolsHeroProps) {
         <CardContent className="p-5">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-foreground">19 concept workflows</p>
-              <p className="text-sm text-muted-foreground">Grouped by document need</p>
+              <p className="text-sm font-semibold text-foreground">19 document workflows</p>
+              <p className="text-sm text-muted-foreground">6 local tools, 13 concept previews</p>
             </div>
             <Badge>{tools.length} tools</Badge>
           </div>

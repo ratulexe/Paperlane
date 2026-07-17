@@ -53,7 +53,7 @@ export type FaqItem = {
   answer: string;
 };
 
-export const supportPoints = ["Clear workflows", "Local demo interactions", "No unnecessary complexity"];
+export const supportPoints = ["Clear workflows", "Browser-local tools", "No unnecessary complexity"];
 
 export const recentDocuments: RecentDocument[] = [
   { fileName: "Project brief.pdf", lastAction: "Compressed", status: "Ready" },
@@ -83,17 +83,22 @@ export const processSteps: ProcessStep[] = [
   {
     number: "01",
     title: "Choose a tool",
-    description: "Select the document action that matches your task.",
+    description: "Select a functional local tool or a clearly labelled concept preview.",
   },
   {
     number: "02",
     title: "Add your document",
-    description: "Choose a local file through the demonstration interface.",
+    description: "Supported tools read the file locally in browser memory.",
   },
   {
     number: "03",
-    title: "Review the workflow",
-    description: "See how a transparent document process could be presented.",
+    title: "Configure the action",
+    description: "Choose page ranges, order, rotation, watermark or output settings.",
+  },
+  {
+    number: "04",
+    title: "Download or preview",
+    description: "Functional tools create a real local output. Concept workflows stop after the interface preview.",
   },
 ];
 
@@ -152,11 +157,13 @@ export const faqItems: FaqItem[] = [
   },
   {
     question: "Does Paperlane process real documents?",
-    answer: "No. The current website demonstrates interface behaviour only. Selected files are not uploaded, converted, analysed or stored.",
+    answer:
+      "Six PDF tools process selected files locally in your browser. The remaining tools are clearly labelled concept previews and do not create output files.",
   },
   {
     question: "Which document tools are represented?",
-    answer: "The concept includes organisation, conversion, optimisation, security and AI-assisted document workflows.",
+    answer:
+      "Paperlane includes 19 workflows across organisation, conversion, optimisation, security and AI-assisted categories, with six currently functional in the browser.",
   },
   {
     question: "Is an account required?",

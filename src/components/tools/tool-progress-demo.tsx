@@ -17,7 +17,7 @@ export function ToolProgressDemo({ progress, status, completed }: ToolProgressDe
       {completed ? (
         <Alert>
           <AlertDescription>
-            Demo completed. No document upload, processing, conversion or download occurred.
+            Concept preview completed. No document processing or output file was created.
           </AlertDescription>
         </Alert>
       ) : null}

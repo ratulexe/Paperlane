@@ -1,0 +1,611 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowDown, ArrowUp, File, MoveHorizontal, Trash2 } from "lucide-react";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
+import { PDFDocument } from "pdf-lib";
+import { toast } from "sonner";
+import { GeneratedOutputList } from "@/components/tools/generated-output";
+import { LocalProcessingStatus } from "@/components/tools/local-processing-status";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { createGeneratedOutput, revokeGeneratedOutputs } from "@/lib/pdf/download-file";
+import { imagesToPdf } from "@/lib/pdf/images-to-pdf";
+import { mergePdfFiles } from "@/lib/pdf/merge-pdf";
+import { parsePageRange } from "@/lib/pdf/page-range";
+import { PdfProcessingError, toUserFacingPdfError } from "@/lib/pdf/pdf-errors";
+import { reorderPdfPages } from "@/lib/pdf/reorder-pdf";
+import { rotatePdfPages } from "@/lib/pdf/rotate-pdf";
+import { extractPdfPages, getPdfPageCount, splitPdfEveryPage } from "@/lib/pdf/split-pdf";
+import { watermarkPdf } from "@/lib/pdf/watermark-pdf";
+import { formatFileSize, getFileExtension } from "@/lib/file-demo";
+import type { DocumentTool } from "@/types/tool";
+import type {
+  GeneratedOutput,
+  ImagePdfMargin,
+  ImagePdfPageSize,
+  ProcessingStatus,
+  RotationOption,
+  SplitMode,
+  WatermarkPosition,
+} from "@/types/processing";
+
+const pdfMaxSize = 50 * 1024 * 1024;
+const imageMaxSize = 20 * 1024 * 1024;
+const pdfMimeTypes = ["application/pdf"];
+const imageMimeTypes = ["image/jpeg", "image/png"];
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
+
+type PagePreviewUrls = Record<number, string>;
+
+function isPdfFile(file: File) {
+  return pdfMimeTypes.includes(file.type) || file.name.toLowerCase().endsWith(".pdf");
+}
+
+function isImageFile(file: File) {
+  const name = file.name.toLowerCase();
+  return imageMimeTypes.includes(file.type) || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png");
+}
+
+function validateFunctionalFile(file: File, kind: "pdf" | "image") {
+  if (kind === "pdf") {
+    if (!isPdfFile(file)) return "Choose a valid PDF file.";
+    if (file.size > pdfMaxSize) return "Choose a PDF smaller than 50 MB.";
+    return "";
+  }
+  if (!isImageFile(file)) return "Choose a JPG or PNG image.";
+  if (file.size > imageMaxSize) return "Choose images smaller than 20 MB each.";
+  return "";
+}
+
+function revokePagePreviewUrls(previews: PagePreviewUrls) {
+  Object.values(previews).forEach((previewUrl) => URL.revokeObjectURL(previewUrl));
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new PdfProcessingError("Paperlane could not create a page preview."));
+    }, "image/png");
+  });
+}
+
+async function readPageCount(file: File) {
+  if (!isPdfFile(file)) return 0;
+  return getPdfPageCount(file);
+}
+
+type LocalFile = {
+  id: string;
+  file: File;
+};
+
+type FunctionalToolWorkflowProps = {
+  tool: DocumentTool;
+  onChooseAnother: () => void;
+};
+
+export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalToolWorkflowProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const pagePreviewUrlsRef = useRef<PagePreviewUrls>({});
+  const [files, setFiles] = useState<LocalFile[]>([]);
+  const [pagePreviewUrls, setPagePreviewUrls] = useState<PagePreviewUrls>({});
+  const [pageCount, setPageCount] = useState(0);
+  const [pageOrder, setPageOrder] = useState<number[]>([]);
+  const [status, setStatus] = useState<ProcessingStatus>("idle");
+  const [error, setError] = useState("");
+  const [outputs, setOutputs] = useState<GeneratedOutput[]>([]);
+  const [splitMode, setSplitMode] = useState<SplitMode>("extract");
+  const [pageRange, setPageRange] = useState("1");
+  const [rotation, setRotation] = useState<RotationOption>("90-clockwise");
+  const [applyMode, setApplyMode] = useState<"all" | "range">("all");
+  const [imagePageSize, setImagePageSize] = useState<ImagePdfPageSize>("fit");
+  const [imageMargin, setImageMargin] = useState<ImagePdfMargin>("small");
+  const [watermarkText, setWatermarkText] = useState("Confidential");
+  const [watermarkSize, setWatermarkSize] = useState(36);
+  const [watermarkOpacity, setWatermarkOpacity] = useState(0.35);
+  const [watermarkPosition, setWatermarkPosition] = useState<WatermarkPosition>("centre");
+
+  const isImageTool = tool.id === "jpg-to-pdf";
+  const allowMultiple = tool.id === "merge-pdf" || isImageTool;
+  const accept = isImageTool ? ".jpg,.jpeg,.png,image/jpeg,image/png" : ".pdf,application/pdf";
+  const canProcess = status !== "reading" && status !== "processing" && status !== "preparing-output";
+  const chooseFileLabel = isImageTool ? "Select JPG/PNG Images" : "Choose PDF Files";
+  const primaryActionLabel = isImageTool
+    ? outputs.length
+      ? "Convert Again"
+      : "Convert"
+    : outputs.length
+      ? "Process Again"
+      : "Process Locally";
+
+  const clearOutputs = () => {
+    revokeGeneratedOutputs(outputs);
+    setOutputs([]);
+  };
+
+  const replacePagePreviewUrls = useCallback((nextPreviewUrls: PagePreviewUrls) => {
+    revokePagePreviewUrls(pagePreviewUrlsRef.current);
+    pagePreviewUrlsRef.current = nextPreviewUrls;
+    setPagePreviewUrls(nextPreviewUrls);
+  }, []);
+
+  const clearPagePreviewUrls = useCallback(() => {
+    replacePagePreviewUrls({});
+  }, [replacePagePreviewUrls]);
+
+  useEffect(() => {
+    return () => revokeGeneratedOutputs(outputs);
+  }, [outputs]);
+
+  useEffect(() => {
+    return () => {
+      revokePagePreviewUrls(pagePreviewUrlsRef.current);
+    };
+  }, []);
+
+  const selectedFile = files[0];
+
+  useEffect(() => {
+    if (tool.id !== "reorder-pages" || !selectedFile || !pageCount) return;
+
+    let cancelled = false;
+
+    const renderPagePreviews = async () => {
+      const data = await selectedFile.file.arrayBuffer();
+      const loadingTask = pdfjsLib.getDocument({ data });
+      const pdf = await loadingTask.promise;
+      const nextPreviewUrls: PagePreviewUrls = {};
+
+      try {
+        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+          if (cancelled) break;
+
+          const page = await pdf.getPage(pageNumber);
+          const baseViewport = page.getViewport({ scale: 1 });
+          const scale = Math.min(0.7, 230 / baseViewport.width);
+          const viewport = page.getViewport({ scale });
+          const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+          const canvas = document.createElement("canvas");
+          const context = canvas.getContext("2d");
+
+          if (!context) throw new PdfProcessingError("Paperlane could not create a page preview.");
+
+          canvas.width = Math.ceil(viewport.width * outputScale);
+          canvas.height = Math.ceil(viewport.height * outputScale);
+          canvas.style.width = `${viewport.width}px`;
+          canvas.style.height = `${viewport.height}px`;
+          context.scale(outputScale, outputScale);
+
+          await page.render({ canvas, canvasContext: context, viewport }).promise;
+          const blob = await canvasToBlob(canvas);
+          nextPreviewUrls[pageNumber - 1] = URL.createObjectURL(blob);
+        }
+
+        if (cancelled) {
+          revokePagePreviewUrls(nextPreviewUrls);
+          return;
+        }
+
+        replacePagePreviewUrls(nextPreviewUrls);
+      } finally {
+        await loadingTask.destroy();
+      }
+    };
+
+    void renderPagePreviews().catch(() => {
+      if (!cancelled) clearPagePreviewUrls();
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clearPagePreviewUrls, pageCount, replacePagePreviewUrls, selectedFile, tool.id]);
+
+  const resetGeneratedState = () => {
+    clearOutputs();
+    setStatus("idle");
+    setError("");
+  };
+
+  const addFiles = async (incomingFiles: FileList | File[]) => {
+    resetGeneratedState();
+    const incoming = Array.from(incomingFiles);
+    const nextFiles = allowMultiple ? [...files] : [];
+    const limit = tool.id === "merge-pdf" ? 5 : isImageTool ? 10 : 1;
+    const kind = isImageTool ? "image" : "pdf";
+
+    for (const file of incoming) {
+      const validationError = validateFunctionalFile(file, kind);
+      if (validationError) {
+        setError(validationError);
+        setStatus("error");
+        return;
+      }
+      if (nextFiles.length >= limit) {
+        setError(isImageTool ? "Choose up to 10 images." : "Merge PDF supports up to five files.");
+        setStatus("error");
+        return;
+      }
+      nextFiles.push({ id: `${file.name}-${file.size}-${file.lastModified}-${crypto.randomUUID()}`, file });
+      if (!allowMultiple) break;
+    }
+
+    setFiles(nextFiles);
+    if (isImageTool || allowMultiple) clearPagePreviewUrls();
+    if (!isImageTool && nextFiles.length === 1) {
+      try {
+        const count = await readPageCount(nextFiles[0].file);
+        setPageCount(count);
+        setPageOrder(Array.from({ length: count }, (_, index) => index));
+        setPageRange(count > 1 ? `1-${Math.min(count, 3)}` : "1");
+      } catch (loadError) {
+        setPageCount(0);
+        setPageOrder([]);
+        clearPagePreviewUrls();
+        setError(toUserFacingPdfError(loadError));
+        setStatus("error");
+      }
+    }
+  };
+
+  const removeFile = (id: string) => {
+    resetGeneratedState();
+    const next = files.filter((item) => item.id !== id);
+    setFiles(next);
+    if (!next.length) {
+      setPageCount(0);
+      setPageOrder([]);
+      clearPagePreviewUrls();
+    }
+  };
+
+  const moveFile = (id: string, direction: "up" | "down") => {
+    const index = files.findIndex((item) => item.id === id);
+    const target = direction === "up" ? index - 1 : index + 1;
+    if (index < 0 || target < 0 || target >= files.length) return;
+    const next = [...files];
+    [next[index], next[target]] = [next[target], next[index]];
+    setFiles(next);
+    resetGeneratedState();
+  };
+
+  const movePage = (pageIndex: number, targetIndex: number) => {
+    const index = pageOrder.indexOf(pageIndex);
+    if (index < 0 || targetIndex < 0 || targetIndex >= pageOrder.length) return;
+    const next = [...pageOrder];
+    next.splice(index, 1);
+    next.splice(targetIndex, 0, pageIndex);
+    setPageOrder(next);
+    resetGeneratedState();
+  };
+
+  const selectedPages = () => {
+    if (applyMode === "all") return Array.from({ length: pageCount }, (_, index) => index);
+    return parsePageRange(pageRange, pageCount);
+  };
+
+  const requireFiles = () => {
+    if (!files.length) {
+      throw new PdfProcessingError(
+        isImageTool ? "Select at least one JPG or PNG image before converting." : "Choose a file before processing.",
+      );
+    }
+    if (tool.id === "merge-pdf" && files.length < 2) {
+      throw new PdfProcessingError("Choose at least two PDF files to merge.");
+    }
+    return files.map((item) => item.file);
+  };
+
+  const processTool = async () => {
+    if (!canProcess) return;
+    setStatus("reading");
+    setError("");
+    clearOutputs();
+
+    try {
+      const selectedFiles = requireFiles();
+      setStatus("processing");
+      let generated: GeneratedOutput[] = [];
+
+      if (tool.id === "merge-pdf") {
+        generated = [createGeneratedOutput(await mergePdfFiles(selectedFiles), "paperlane-merged.pdf")];
+      } else if (tool.id === "split-pdf") {
+        if (splitMode === "every-page") {
+          const pages = await splitPdfEveryPage(selectedFiles[0]);
+          generated = pages.map((bytes, index) => createGeneratedOutput(bytes, `paperlane-page-${index + 1}.pdf`));
+        } else {
+          generated = [createGeneratedOutput(await extractPdfPages(selectedFiles[0], parsePageRange(pageRange, pageCount)), "paperlane-selected-pages.pdf")];
+        }
+      } else if (tool.id === "rotate-pdf") {
+        generated = [createGeneratedOutput(await rotatePdfPages(selectedFiles[0], selectedPages(), rotation), "paperlane-rotated.pdf")];
+      } else if (tool.id === "reorder-pages") {
+        generated = [createGeneratedOutput(await reorderPdfPages(selectedFiles[0], pageOrder), "paperlane-reordered.pdf")];
+      } else if (tool.id === "jpg-to-pdf") {
+        generated = [createGeneratedOutput(await imagesToPdf(selectedFiles, imagePageSize, imageMargin), "paperlane-images.pdf")];
+      } else if (tool.id === "add-watermark") {
+        generated = [
+          createGeneratedOutput(
+            await watermarkPdf(selectedFiles[0], {
+              text: watermarkText,
+              fontSize: watermarkSize,
+              opacity: watermarkOpacity,
+              position: watermarkPosition,
+              pageIndexes: selectedPages(),
+            }),
+            "paperlane-watermarked.pdf",
+          ),
+        ];
+      }
+
+      setStatus("preparing-output");
+      setOutputs(generated);
+      setStatus("complete");
+      toast.success("Processing completed locally in your browser.");
+    } catch (processingError) {
+      setStatus("error");
+      setError(toUserFacingPdfError(processingError));
+    }
+  };
+
+  const inspectPdf = async () => {
+    if (!files[0]) return;
+    try {
+      const pdf = await PDFDocument.load(await files[0].file.arrayBuffer(), { ignoreEncryption: false });
+      setPageCount(pdf.getPageCount());
+    } catch (loadError) {
+      setError(toUserFacingPdfError(loadError));
+      setStatus("error");
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <Alert>
+        <AlertDescription>
+          Your document is processed locally in this browser. It is not uploaded to a Paperlane server. Large or complex files may use significant browser memory during local processing.
+        </AlertDescription>
+      </Alert>
+
+      <input
+        ref={inputRef}
+        type="file"
+        className="sr-only"
+        accept={accept}
+        multiple={allowMultiple}
+        onChange={(event) => {
+          if (event.target.files) void addFiles(event.target.files);
+          event.target.value = "";
+        }}
+      />
+      <Button type="button" variant="outline" onClick={() => inputRef.current?.click()} disabled={!canProcess}>
+        {chooseFileLabel}
+      </Button>
+
+      {files.length ? (
+        <div className="space-y-2">
+          {files.map((item, index) => (
+            <div key={item.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-secondary text-primary">
+                <File className="h-4 w-4" aria-hidden="true" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold">{item.file.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {(getFileExtension(item.file.name) || item.file.type || "file").toUpperCase()} · {formatFileSize(item.file.size)}
+                </p>
+              </div>
+              <Badge variant="secondary">{index + 1}</Badge>
+              {allowMultiple ? (
+                <div className="flex gap-1">
+                  <Button type="button" variant="ghost" size="icon" onClick={() => moveFile(item.id, "up")} disabled={index === 0 || !canProcess} aria-label={`Move ${item.file.name} up`}>
+                    <ArrowUp className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                  <Button type="button" variant="ghost" size="icon" onClick={() => moveFile(item.id, "down")} disabled={index === files.length - 1 || !canProcess} aria-label={`Move ${item.file.name} down`}>
+                    <ArrowDown className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </div>
+              ) : null}
+              <Button type="button" variant="ghost" size="icon" onClick={() => removeFile(item.id)} disabled={!canProcess} aria-label={`Remove ${item.file.name}`}>
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {pageCount ? <p className="text-sm font-medium text-muted-foreground">Detected {pageCount} {pageCount === 1 ? "page" : "pages"}.</p> : null}
+
+      {tool.id === "split-pdf" ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-2">
+            <Label>Split mode</Label>
+            <Select value={splitMode} onValueChange={(value) => setSplitMode(value as SplitMode)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="extract">Extract page selection</SelectItem>
+                <SelectItem value="every-page">Split every page</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {splitMode === "extract" ? (
+            <div className="grid gap-2">
+              <Label htmlFor="split-page-range">Page range</Label>
+              <Input id="split-page-range" value={pageRange} onChange={(event) => setPageRange(event.target.value)} placeholder="1-3,6" />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {tool.id === "rotate-pdf" ? (
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-2">
+            <Label>Rotation</Label>
+            <Select value={rotation} onValueChange={(value) => setRotation(value as RotationOption)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="90-clockwise">90° clockwise</SelectItem>
+                <SelectItem value="90-counter-clockwise">90° counter-clockwise</SelectItem>
+                <SelectItem value="180">180°</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <PageRangeControls applyMode={applyMode} pageRange={pageRange} onApplyModeChange={setApplyMode} onPageRangeChange={setPageRange} />
+        </div>
+      ) : null}
+
+      {tool.id === "reorder-pages" && pageOrder.length ? (
+        <div className="space-y-3">
+          <p className="text-sm font-semibold">Current output order: {pageOrder.map((index) => `Page ${index + 1}`).join(", ")}</p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {pageOrder.map((pageIndex, currentIndex) => (
+              <div key={pageIndex} className="rounded-lg border bg-card p-3">
+                <div className="overflow-hidden rounded-md border bg-muted/35">
+                  <div className="aspect-[3/4]">
+                    {pagePreviewUrls[pageIndex] ? (
+                      <img
+                        className="h-full w-full object-contain"
+                        src={pagePreviewUrls[pageIndex]}
+                        alt={`Preview of page ${pageIndex + 1}`}
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center p-4 text-center text-sm text-muted-foreground">
+                        Rendering page preview...
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium">Page {pageIndex + 1}</span>
+                  <Badge variant="secondary">Output {currentIndex + 1}</Badge>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-1">
+                  <Button type="button" size="sm" variant="outline" onClick={() => movePage(pageIndex, 0)} disabled={currentIndex === 0 || !canProcess} aria-label={`Move Page ${pageIndex + 1} to beginning`}>First</Button>
+                  <Button type="button" size="icon-sm" variant="outline" onClick={() => movePage(pageIndex, currentIndex - 1)} disabled={currentIndex === 0 || !canProcess} aria-label={`Move Page ${pageIndex + 1} earlier`}><ArrowUp className="h-4 w-4" aria-hidden="true" /></Button>
+                  <Button type="button" size="icon-sm" variant="outline" onClick={() => movePage(pageIndex, currentIndex + 1)} disabled={currentIndex === pageOrder.length - 1 || !canProcess} aria-label={`Move Page ${pageIndex + 1} later`}><ArrowDown className="h-4 w-4" aria-hidden="true" /></Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => movePage(pageIndex, pageOrder.length - 1)} disabled={currentIndex === pageOrder.length - 1 || !canProcess} aria-label={`Move Page ${pageIndex + 1} to end`}>Last</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {tool.id === "jpg-to-pdf" ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-2">
+            <Label>Page size</Label>
+            <Select value={imagePageSize} onValueChange={(value) => setImagePageSize(value as ImagePdfPageSize)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fit">Fit image</SelectItem>
+                <SelectItem value="a4-portrait">A4 portrait</SelectItem>
+                <SelectItem value="a4-landscape">A4 landscape</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label>Margins</Label>
+            <Select value={imageMargin} onValueChange={(value) => setImageMargin(value as ImagePdfMargin)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="small">Small</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      ) : null}
+
+      {tool.id === "add-watermark" ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-2 sm:col-span-2">
+            <Label htmlFor="watermark-text-real">Watermark text</Label>
+            <Input id="watermark-text-real" maxLength={100} value={watermarkText} onChange={(event) => setWatermarkText(event.target.value)} />
+          </div>
+          <div className="grid gap-2">
+            <Label>Font size: {watermarkSize}</Label>
+            <Slider value={[watermarkSize]} min={12} max={96} step={1} onValueChange={([value]) => setWatermarkSize(value)} />
+          </div>
+          <div className="grid gap-2">
+            <Label>Opacity: {watermarkOpacity.toFixed(1)}</Label>
+            <Slider value={[watermarkOpacity]} min={0.1} max={1} step={0.1} onValueChange={([value]) => setWatermarkOpacity(value)} />
+          </div>
+          <div className="grid gap-2">
+            <Label>Position</Label>
+            <Select value={watermarkPosition} onValueChange={(value) => setWatermarkPosition(value as WatermarkPosition)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="centre">Centre</SelectItem>
+                <SelectItem value="top-left">Top left</SelectItem>
+                <SelectItem value="top-right">Top right</SelectItem>
+                <SelectItem value="bottom-left">Bottom left</SelectItem>
+                <SelectItem value="bottom-right">Bottom right</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <PageRangeControls applyMode={applyMode} pageRange={pageRange} onApplyModeChange={setApplyMode} onPageRangeChange={setPageRange} />
+        </div>
+      ) : null}
+
+      <LocalProcessingStatus status={status} error={error} />
+      <GeneratedOutputList outputs={outputs} onRemove={() => {
+        clearOutputs();
+        setStatus("idle");
+      }} />
+
+      <div className="flex flex-wrap gap-3">
+        <Button type="button" onClick={processTool} disabled={!canProcess}>
+          <MoveHorizontal className="h-4 w-4" aria-hidden="true" />
+          {primaryActionLabel}
+        </Button>
+        <Button type="button" variant="outline" onClick={inspectPdf} disabled={isImageTool || !files.length || !canProcess}>
+          Refresh Page Info
+        </Button>
+        <Button type="button" variant="outline" onClick={onChooseAnother}>
+          Choose Another Tool
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function PageRangeControls({
+  applyMode,
+  pageRange,
+  onApplyModeChange,
+  onPageRangeChange,
+}: {
+  applyMode: "all" | "range";
+  pageRange: string;
+  onApplyModeChange: (mode: "all" | "range") => void;
+  onPageRangeChange: (range: string) => void;
+}) {
+  return (
+    <>
+      <div className="grid gap-2">
+        <Label>Apply to</Label>
+        <Select value={applyMode} onValueChange={(value) => onApplyModeChange(value as "all" | "range")}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All pages</SelectItem>
+            <SelectItem value="range">Selected page range</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {applyMode === "range" ? (
+        <div className="grid gap-2">
+          <Label htmlFor="functional-page-range">Page range</Label>
+          <Input id="functional-page-range" value={pageRange} onChange={(event) => onPageRangeChange(event.target.value)} placeholder="1-3,6" />
+        </div>
+      ) : null}
+    </>
+  );
+}

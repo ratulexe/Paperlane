@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, Bot, CheckCircle2 } from "lucide-react";
+import { FunctionalToolWorkflow } from "@/components/tools/functional-tool-workflow";
 import { toast } from "sonner";
 import { ToolFileSelector } from "@/components/tools/tool-file-selector";
 import { ToolProgressDemo } from "@/components/tools/tool-progress-demo";
@@ -335,6 +336,7 @@ export function ToolWorkflowDialog({ tool, open, onOpenChange }: ToolWorkflowDia
   if (!tool) return null;
   const Icon = tool.icon;
   const badges = tool.badges.filter((badge) => badge !== "none");
+  const isFunctional = tool.implementationStatus === "functional";
 
   const updateConfig = (key: string, value: DemoOptionValue) => {
     setConfig((current) => ({ ...current, [key]: value }));
@@ -363,7 +365,7 @@ export function ToolWorkflowDialog({ tool, open, onOpenChange }: ToolWorkflowDia
           timerRef.current = null;
           setIsRunning(false);
           setCompleted(true);
-          setProgressStatus("Demo completed. No document upload, processing, conversion or download occurred.");
+          setProgressStatus("Concept preview completed. No document processing or output file was created.");
         }
         return next;
       });
@@ -413,10 +415,17 @@ export function ToolWorkflowDialog({ tool, open, onOpenChange }: ToolWorkflowDia
 
             <Alert className="mt-5">
               <AlertDescription>
-                Demo interface only — your document remains on your device and is not uploaded, processed or stored by Paperlane.
+                {isFunctional
+                  ? "Your document is processed locally in this browser. It is not uploaded to a Paperlane server."
+                  : "This workflow demonstrates the intended interface only. No document processing or output file creation occurs."}
               </AlertDescription>
             </Alert>
 
+            {isFunctional ? (
+              <div className="mt-5">
+                <FunctionalToolWorkflow tool={tool} onChooseAnother={() => handleOpenChange(false)} />
+              </div>
+            ) : (
             <Tabs value={activeStep} onValueChange={setActiveStep} className="mt-5">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="select">1. Select</TabsTrigger>
@@ -467,7 +476,7 @@ export function ToolWorkflowDialog({ tool, open, onOpenChange }: ToolWorkflowDia
                       </div>
                       <div>
                         <dt className="text-muted-foreground">Notice</dt>
-                        <dd className="font-medium">Frontend-only workflow</dd>
+                        <dd className="font-medium">Concept preview</dd>
                       </div>
                     </dl>
                     <div className="rounded-lg border bg-muted/30 p-3">
@@ -488,8 +497,10 @@ export function ToolWorkflowDialog({ tool, open, onOpenChange }: ToolWorkflowDia
                 <ToolProgressDemo progress={progress} status={progressStatus} completed={completed} />
               </TabsContent>
             </Tabs>
+            )}
           </div>
 
+          {!isFunctional ? (
           <DialogFooter className="sticky bottom-0 border-t bg-background p-4">
             <DialogClose asChild>
               <Button variant="outline" onClick={() => resetState()}>
@@ -504,6 +515,7 @@ export function ToolWorkflowDialog({ tool, open, onOpenChange }: ToolWorkflowDia
               Start Demo
             </Button>
           </DialogFooter>
+          ) : null}
         </ScrollArea>
       </DialogContent>
     </Dialog>

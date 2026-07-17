@@ -1,5 +1,4 @@
 import { SectionHeading } from "@/components/shared/section-heading";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { processSteps } from "@/data/homepage";
 
@@ -7,10 +6,9 @@ export function HowItWorksSection() {
   return (
     <section id="how-it-works" className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 md:py-16">
       <SectionHeading eyebrow="How it works" title="A clear path from file to finished workflow." />
-      <div className="relative grid gap-4 md:grid-cols-3">
-        <div className="absolute left-8 right-8 top-12 hidden h-px bg-border md:block" aria-hidden="true" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {processSteps.map((step) => (
-          <Card key={step.number} className="relative shadow-none">
+          <Card key={step.number} className="shadow-none">
             <CardContent className="p-5">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
                 {step.number}
@@ -21,9 +19,6 @@ export function HowItWorksSection() {
           </Card>
         ))}
       </div>
-      <Alert className="mt-5">
-        <AlertDescription>Paperlane currently demonstrates interface behaviour only.</AlertDescription>
-      </Alert>
     </section>
   );
 }

@@ -165,12 +165,12 @@ export function WorkspacePreview() {
             <FileText className="h-5 w-5" aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <CardTitle className="text-lg">Quick action</CardTitle>
-            <p className="text-sm text-muted-foreground">Product interface concept</p>
+            <CardTitle className="text-lg">Document Workspace</CardTitle>
+            <p className="text-sm text-muted-foreground">Choose a file and explore a workflow</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="secondary">Demo</Badge>
+          <Badge variant="secondary" className="whitespace-normal text-center">Workspace Preview</Badge>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Quick action menu">
@@ -239,7 +239,7 @@ export function WorkspacePreview() {
 
             <Alert className="bg-card">
               <AlertDescription>
-                Frontend demonstration only. Files are not uploaded or processed.
+                Supported tools process files locally in your browser. Other workflows remain clearly labelled concept previews.
               </AlertDescription>
             </Alert>
 

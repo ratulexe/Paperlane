@@ -8,9 +8,10 @@ import type { DocumentTool } from "@/types/tool";
 type ToolCardProps = {
   tool: DocumentTool;
   onOpen: (tool: DocumentTool) => void;
+  disabled?: boolean;
 };
 
-export function ToolCard({ tool, onOpen }: ToolCardProps) {
+export function ToolCard({ tool, onOpen, disabled = false }: ToolCardProps) {
   const Icon = tool.icon;
   const visibleBadges = tool.badges.filter((badge) => badge !== "none");
 
@@ -23,6 +24,9 @@ export function ToolCard({ tool, onOpen }: ToolCardProps) {
           </div>
           <div className="flex flex-wrap justify-end gap-2">
             <Badge variant="secondary">{categoryLabels[tool.category]}</Badge>
+            <Badge variant={tool.implementationStatus === "functional" ? "default" : "outline"}>
+              {tool.implementationStatus === "functional" ? "Local processing" : "Concept preview"}
+            </Badge>
             {visibleBadges.map((badge) => (
               <Badge key={badge} variant={badge === "ai" ? "outline" : "default"}>
                 {badge === "ai" ? "AI" : badge[0].toUpperCase() + badge.slice(1)}
@@ -32,9 +36,20 @@ export function ToolCard({ tool, onOpen }: ToolCardProps) {
         </div>
         <h2 className="text-lg font-semibold text-foreground">{tool.name}</h2>
         <p className="mt-2 flex-1 text-sm leading-6 text-muted-foreground">{tool.shortDescription}</p>
-        <Button className="mt-5 w-full justify-between" variant="outline" onClick={() => onOpen(tool)} aria-label={`Open ${tool.name} demo`}>
-          Open Tool
-          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+        <Button
+          className="mt-5 w-full justify-between"
+          variant="outline"
+          onClick={() => {
+            if (!disabled) onOpen(tool);
+          }}
+          disabled={disabled}
+          aria-label={disabled ? `${tool.name} is currently unavailable` : `Open ${tool.name} demo`}
+          title={disabled ? "This tool is currently unavailable" : undefined}
+        >
+          {disabled ? "Currently unavailable" : "Open Tool"}
+          {!disabled ? (
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+          ) : null}
         </Button>
       </CardContent>
     </Card>

@@ -55,8 +55,8 @@ export const lifecycleStages = [
   "User selects a file",
   "Tool explains the intended action",
   "User reviews configuration choices",
-  "Processing method would be communicated",
-  "Retention behaviour would be disclosed",
+  "Processing method is communicated",
+  "Retention behaviour is disclosed",
 ];
 
 export const transparencyRows = [
@@ -64,7 +64,7 @@ export const transparencyRows = [
     dataType: "File content",
     why: "Required only for the chosen document action.",
     approach: "Clearly communicate processing location and retention behaviour.",
-    status: "Not uploaded or collected by this frontend demo.",
+    status: "Functional tools read selected file bytes locally in browser memory. Paperlane does not send those files to a server.",
   },
   {
     dataType: "Account information",
@@ -104,11 +104,13 @@ export const aiCautions: PrivacyItem[] = [
 export const privacyFaqItems = [
   {
     question: "Does Paperlane currently upload selected files?",
-    answer: "No. File selection is used only to demonstrate interface behaviour. The current website does not upload selected documents.",
+    answer:
+      "No. Functional tools process files locally in browser memory, and concept previews use selected files only to display file details.",
   },
   {
     question: "Does Paperlane store selected documents?",
-    answer: "No. The frontend demonstration does not store document files or create user document histories.",
+    answer:
+      "No. Paperlane does not include document storage, user document histories, localStorage, sessionStorage or IndexedDB persistence.",
   },
   {
     question: "Is Paperlane end-to-end encrypted?",

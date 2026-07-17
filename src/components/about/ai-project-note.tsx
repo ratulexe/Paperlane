@@ -16,7 +16,7 @@ export function AiProjectNote() {
             </p>
             <ConceptAlert
               className="mt-5 bg-card"
-              description="The current website focuses on product design and frontend interaction. It does not include real document-processing infrastructure."
+              description="The current website focuses on product design, frontend interaction and selected browser-local processing. It does not include backend document-processing infrastructure."
             />
           </div>
         </div>

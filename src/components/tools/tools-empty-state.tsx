@@ -22,7 +22,7 @@ export function ToolsEmptyState({ onClearSearch, onShowAll }: ToolsEmptyStatePro
           <SearchX className="h-5 w-5" aria-hidden="true" />
         </EmptyMedia>
         <EmptyTitle>No matching tools</EmptyTitle>
-        <EmptyDescription>Try a different search term or choose another category.</EmptyDescription>
+        <EmptyDescription>Try another search term or choose a different category.</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
         <div className="flex flex-wrap justify-center gap-3">

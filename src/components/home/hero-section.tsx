@@ -1,50 +1,52 @@
-import { ArrowRight, Check } from "lucide-react";
-import { Link } from "react-router-dom";
-import { WorkspacePreview } from "@/components/home/workspace-preview";
+import { ArrowDown, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { supportPoints } from "@/data/homepage";
+
+const capabilityItems = [
+  { label: "6 browser-local tools", icon: CheckCircle2 },
+  { label: "13 concept previews", icon: Sparkles },
+  { label: "No server upload for local tools", icon: ShieldCheck },
+];
 
 export function HeroSection() {
   return (
-    <section className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-14 sm:px-6 md:py-18 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:py-22">
-      <div>
-        <Badge variant="secondary" className="mb-5">
-          Privacy-conscious document workspace
+    <section className="mx-auto w-full max-w-6xl px-4 py-6 text-center sm:px-6 md:py-8">
+      <div className="mx-auto max-w-4xl">
+        <Badge variant="secondary" className="mb-3">
+          Document tools, made clearer
         </Badge>
-        <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-          Documents,{" "}
-          <span className="text-primary underline decoration-primary/20 decoration-4 underline-offset-4">
-            without the usual friction
-          </span>
-          .
+        <h1 className="mx-auto max-w-4xl text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+          All your document tools, in <span className="text-primary">one clear workspace.</span>
         </h1>
-        <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-          Paperlane brings everyday document tools into one clear workspace for organising, converting and
-          understanding files.
+        <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
+          Process supported documents locally in your browser and explore additional workflows through a consistent,
+          privacy-conscious interface.
         </p>
-        <div className="mt-7 flex flex-wrap gap-3">
+        <div className="mt-4 flex flex-wrap justify-center gap-3">
           <Button asChild>
-            <Link to="/tools">
-              Explore Tools
-              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-            </Link>
+            <a href="#homepage-tools">
+              Browse Tools
+              <ArrowDown className="ml-2 h-4 w-4" aria-hidden="true" />
+            </a>
           </Button>
           <Button asChild variant="outline">
-            <a href="#how-it-works">See How It Works</a>
+            <a href="#local-processing">How Local Processing Works</a>
           </Button>
         </div>
-        <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-muted-foreground">
-          {supportPoints.map((point) => (
-            <li key={point} className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-primary" aria-hidden="true" />
-              {point}
-            </li>
-          ))}
+        <ul className="mt-4 flex flex-wrap justify-center gap-2 text-sm font-medium text-muted-foreground">
+          {capabilityItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <li key={item.label}>
+                <Badge variant="outline" className="gap-2 bg-card/70 px-3 py-1.5">
+                  <Icon className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                  {item.label}
+                </Badge>
+              </li>
+            );
+          })}
         </ul>
       </div>
-
-      <WorkspacePreview />
     </section>
   );
 }

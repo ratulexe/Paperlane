@@ -18,7 +18,7 @@ export function SiteFooter() {
             Paperlane
           </Link>
           <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-            Paperlane is a frontend concept exploring clearer and more approachable document workflows.
+            Paperlane is a document workflow concept with selected browser-local PDF tools and clear previews.
           </p>
         </div>
         <nav className="flex flex-wrap gap-x-5 gap-y-3 text-sm font-medium text-muted-foreground" aria-label="Footer navigation">
@@ -31,7 +31,7 @@ export function SiteFooter() {
       </div>
       <div className="mx-auto w-full max-w-6xl px-4 pb-8 sm:px-6">
         <Separator />
-        <p className="mt-5 text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Paperlane. Frontend concept only.</p>
+        <p className="mt-5 text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Paperlane. Product concept with selected local tools.</p>
       </div>
     </footer>
   );

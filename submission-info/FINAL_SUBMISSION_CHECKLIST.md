@@ -2,6 +2,8 @@
 
 - [ ] Build passed
 - [ ] Lint passed
+- [ ] Six browser-local PDF tools tested
+- [ ] Concept preview tools checked for no generated output
 - [ ] Website deployed
 - [ ] Live link tested
 - [ ] GitHub repository updated
