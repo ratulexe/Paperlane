@@ -14,6 +14,7 @@ type ToolCardProps = {
 export function ToolCard({ tool, onOpen, disabled = false }: ToolCardProps) {
   const Icon = tool.icon;
   const visibleBadges = tool.badges.filter((badge) => badge !== "none");
+  const statusLabel = disabled ? "Currently unavailable" : "Local processing";
 
   return (
     <Card className="group h-full transition-colors hover:border-primary/40 hover:shadow-sm focus-within:border-primary/50">
@@ -24,9 +25,7 @@ export function ToolCard({ tool, onOpen, disabled = false }: ToolCardProps) {
           </div>
           <div className="flex flex-wrap justify-end gap-2">
             <Badge variant="secondary">{categoryLabels[tool.category]}</Badge>
-            <Badge variant={tool.implementationStatus === "functional" ? "default" : "outline"}>
-              {tool.implementationStatus === "functional" ? "Local processing" : "Concept preview"}
-            </Badge>
+            <Badge variant={disabled ? "outline" : "default"}>{statusLabel}</Badge>
             {visibleBadges.map((badge) => (
               <Badge key={badge} variant={badge === "ai" ? "outline" : "default"}>
                 {badge === "ai" ? "AI" : badge[0].toUpperCase() + badge.slice(1)}
@@ -43,7 +42,7 @@ export function ToolCard({ tool, onOpen, disabled = false }: ToolCardProps) {
             if (!disabled) onOpen(tool);
           }}
           disabled={disabled}
-          aria-label={disabled ? `${tool.name} is currently unavailable` : `Open ${tool.name} demo`}
+          aria-label={disabled ? `${tool.name} is currently unavailable` : `Open ${tool.name} tool`}
           title={disabled ? "This tool is currently unavailable" : undefined}
         >
           {disabled ? "Currently unavailable" : "Open Tool"}

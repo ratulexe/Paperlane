@@ -4,7 +4,15 @@ import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { acceptedTypeSummary, createDemoFile, formatFileSize, getFileExtension, validateDemoFile } from "@/lib/file-demo";
+import {
+  acceptedTypeActionLabel,
+  acceptedTypeAttribute,
+  acceptedTypeSummary,
+  createDemoFile,
+  formatFileSize,
+  getFileExtension,
+  validateDemoFile,
+} from "@/lib/file-demo";
 import { cn } from "@/lib/utils";
 import type { AcceptedFileType, SelectedDemoFile } from "@/types/tool";
 
@@ -26,7 +34,9 @@ export function ToolFileSelector({
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
-  const accept = acceptedTypeSummary(acceptedFileTypes);
+  const acceptSummary = acceptedTypeSummary(acceptedFileTypes);
+  const acceptAttribute = acceptedTypeAttribute(acceptedFileTypes);
+  const actionLabel = acceptedTypeActionLabel(acceptedFileTypes);
 
   const addFiles = (incomingFiles: FileList | File[]) => {
     const incoming = Array.from(incomingFiles);
@@ -86,7 +96,7 @@ export function ToolFileSelector({
         className="sr-only"
         type="file"
         multiple={allowMultiple}
-        accept={accept}
+        accept={acceptAttribute}
         onChange={(event) => {
           if (event.target.files) addFiles(event.target.files);
           event.target.value = "";
@@ -113,14 +123,14 @@ export function ToolFileSelector({
       >
         <FilePlus2 className="h-8 w-8 text-primary" aria-hidden="true" />
         <strong className="mt-3 text-base font-semibold">Drag a file here or browse</strong>
-        <span className="mt-1 text-sm text-muted-foreground">Accepted: {accept}</span>
+        <span className="mt-1 text-sm text-muted-foreground">Accepted: {acceptSummary}</span>
         <span className="mt-4 rounded-md border bg-background px-3 py-1.5 text-sm font-medium">
           Drop or press Enter
         </span>
       </label>
 
       <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
-        Browse Files
+        {actionLabel}
       </Button>
 
       {error ? (

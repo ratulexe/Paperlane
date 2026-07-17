@@ -19,6 +19,26 @@ export function acceptedTypeSummary(types: AcceptedFileType[]) {
   return types.flatMap((type) => type.extensions).join(", ");
 }
 
+export function acceptedTypeAttribute(types: AcceptedFileType[]) {
+  return types
+    .flatMap((type) => [...type.extensions, ...type.mimeTypes])
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(",");
+}
+
+export function acceptedTypeActionLabel(types: AcceptedFileType[]) {
+  const labels = types.map((type) => type.label);
+
+  if (labels.length === 1) {
+    if (labels[0] === "Word") return "Select Word Document";
+    if (labels[0] === "PDF") return "Select PDF File";
+    if (labels[0] === "Image") return "Select Image File";
+  }
+
+  return "Browse Files";
+}
+
 export function validateDemoFile(file: File, acceptedFileTypes: AcceptedFileType[]) {
   if (file.size > maxDemoFileSize) {
     return "Choose a file smaller than 25 MB for this demonstration.";

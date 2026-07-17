@@ -13,6 +13,21 @@ function getDownloadFilename(output: GeneratedOutput, filename: string) {
   return sanitized.toLowerCase().endsWith(".pdf") ? sanitized : `${sanitized}.pdf`;
 }
 
+function getDownloadButtonLabel(output: GeneratedOutput) {
+  const filename = output.filename.toLowerCase();
+  const pageNumber = filename.match(/paperlane-page-(\d+)\.pdf/)?.[1];
+
+  if (filename.includes("merged")) return "Download Merged PDF";
+  if (filename.includes("selected-pages")) return "Download Selected Pages";
+  if (pageNumber) return `Download Page ${pageNumber}`;
+  if (filename.includes("rotated")) return "Download Rotated PDF";
+  if (filename.includes("reordered")) return "Download Reordered PDF";
+  if (filename.includes("images")) return "Download Image PDF";
+  if (filename.includes("watermarked")) return "Download Watermarked PDF";
+
+  return "Download PDF";
+}
+
 export function GeneratedOutputList({
   outputs,
   onRemove,
@@ -65,7 +80,7 @@ export function GeneratedOutputList({
                   aria-label={`Download ${finalFilename}`}
                 >
                   <Download className="h-4 w-4" aria-hidden="true" />
-                  Download PDF
+                  {getDownloadButtonLabel(output)}
                 </Button>
               </div>
             );
