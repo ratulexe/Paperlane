@@ -1,12 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Paperlane favicon">
   <defs>
-    <linearGradient id="paperlane-gradient" x1="10" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+    <linearGradient id="mark" x1="11" y1="11" x2="53" y2="53" gradientUnits="userSpaceOnUse">
       <stop stop-color="#6f4ff2"/>
       <stop offset="1" stop-color="#ff8f7d"/>
     </linearGradient>
+    <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#201247" flood-opacity=".18"/>
+    </filter>
   </defs>
-  <rect width="64" height="64" rx="18" fill="#fbf7f2"/>
-  <path d="M18 14h24l8 8v28H18V14Z" fill="url(#paperlane-gradient)"/>
-  <path d="M42 14v9h8" fill="#f8d8ce"/>
-  <path d="M26 33c4-7 14-8 18-1-5-2-10 0-14 6l-4 6h-6l6-11Z" fill="#ffffff"/>
+  <rect width="64" height="64" rx="18" fill="#161827"/>
+  <path d="M13 33 51 14 41 51 32 38 20 48l5-14-12-1Z" fill="url(#mark)" filter="url(#soft-shadow)"/>
+  <path d="M25 34 51 14 32 38" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".92"/>
+  <path d="M20 48 25 34" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity=".7"/>
 </svg>
