@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Download, Trash2 } from "lucide-react";
+import { Download, PackageIcon, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { downloadGeneratedOutput, sanitizeFilename } from "@/lib/pdf/download-file";
+import { createZipBlob, downloadBlob, downloadGeneratedOutput, sanitizeFilename } from "@/lib/pdf/download-file";
 import { formatFileSize } from "@/lib/file-demo";
 import type { GeneratedOutput } from "@/types/processing";
 
@@ -49,6 +49,18 @@ export function GeneratedOutputList({
 
   if (!outputs.length) return null;
 
+  const canDownloadZip = outputs.length > 1 && outputs.every((output) => output.mimeType === "image/jpeg" || output.mimeType === "image/png");
+
+  const downloadZip = async () => {
+    const zipBlob = await createZipBlob(
+      outputs.map((output) => ({
+        filename: getDownloadFilename(output, downloadNames[output.objectUrl] ?? output.filename),
+        blob: output.blob,
+      })),
+    );
+    downloadBlob(zipBlob, "paperlane-images.zip");
+  };
+
   return (
     <Card className="border-primary/20 bg-secondary/35 shadow-none">
       <CardContent className="space-y-3 p-4">
@@ -58,6 +70,18 @@ export function GeneratedOutputList({
             Processing completed locally in your browser. Your file was not uploaded to a Paperlane server.
           </p>
         </div>
+        {canDownloadZip ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-3">
+            <div>
+              <p className="text-sm font-semibold">Download all images</p>
+              <p className="text-xs text-muted-foreground">Creates a ZIP locally in this browser using the names below.</p>
+            </div>
+            <Button type="button" onClick={() => void downloadZip()}>
+              <PackageIcon className="h-4 w-4" aria-hidden="true" />
+              Download ZIP
+            </Button>
+          </div>
+        ) : null}
         <div className="grid gap-2">
           {outputs.map((output, index) => {
             const downloadName = downloadNames[output.objectUrl] ?? output.filename;

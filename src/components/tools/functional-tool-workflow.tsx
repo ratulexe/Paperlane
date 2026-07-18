@@ -88,6 +88,22 @@ type FunctionalToolWorkflowProps = {
   onChooseAnother: () => void;
 };
 
+function getPrimaryActionLabel(toolId: string, hasOutputs: boolean, pdfImageFormat: PdfImageExportFormat) {
+  const labels: Record<string, string> = {
+    "merge-pdf": "Merge PDF",
+    "split-pdf": "Split PDF",
+    "rotate-pdf": "Rotate PDF",
+    "reorder-pages": "Reorder PDF",
+    "jpg-to-pdf": "Convert to PDF",
+    "remove-blank-pages": "Remove Blank Pages",
+    "add-watermark": "Add Watermark",
+    "sign-document": "Add Visual Signature",
+  };
+
+  const label = toolId === "pdf-to-jpg" ? `Convert to ${pdfImageFormat.toUpperCase()}` : (labels[toolId] ?? "Process File");
+  return hasOutputs ? `${label} Again` : label;
+}
+
 export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalToolWorkflowProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const signatureImageInputRef = useRef<HTMLInputElement>(null);
@@ -135,13 +151,7 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
   const chooseFileLabel = isImageTool ? "Select JPG/PNG Images" : "Choose PDF Files";
   const dropzoneTitle = isImageTool ? "Drop JPG/PNG images here" : "Drop PDF files here";
   const acceptedFileSummary = isImageTool ? ".jpg, .jpeg, .png" : ".pdf";
-  const primaryActionLabel = isImageTool
-    ? outputs.length
-      ? "Convert Again"
-      : "Convert"
-    : outputs.length
-      ? "Process Again"
-      : "Process Locally";
+  const primaryActionLabel = getPrimaryActionLabel(tool.id, outputs.length > 0, pdfImageFormat);
 
   const clearOutputs = () => {
     revokeGeneratedOutputs(outputs);
