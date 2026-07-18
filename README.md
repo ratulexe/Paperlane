@@ -22,7 +22,10 @@ Privacy-conscious document productivity SaaS concept with selected browser-local
 - Rotate PDF: `/rotate-pdf`
 - Reorder PDF: `/reorder-pdf`
 - JPG/PNG to PDF: `/jpg-to-pdf`
+- PDF to JPG/PNG: `/pdf-to-jpg`
+- Remove Blank Pages: `/remove-blank-pages`
 - Add Watermark: `/add-watermark`
+- Visual Sign PDF: `/visual-sign-pdf`
 - Privacy
 - Contact
 
@@ -31,11 +34,11 @@ Privacy-conscious document productivity SaaS concept with selected browser-local
 - Responsive SaaS landing page
 - Actual shadcn/ui components
 - 19 document workflows
-- 6 browser-local functional tools
-- 13 clearly labelled concept previews
+- 9 browser-local functional tools
+- 10 clearly labelled coming-soon tools
 - Tool search and category filters
 - Reusable workflow Dialog
-- Local PDF processing for merge, split, rotate, reorder, image-to-PDF and text watermark tools
+- Local PDF processing for merge, split, rotate, reorder, image-to-PDF, PDF-to-image, blank-page review/removal, text watermark and visual-signature tools
 - Real Blob/object URL downloads for functional tools
 - File metadata previews and simulated progress for concept tools
 - Responsible AI notices
@@ -86,25 +89,31 @@ npm run build
 
 ## Functional Tools
 
-The following tools run in browser memory with `pdf-lib` and selected files are not uploaded to a Paperlane server:
+The following tools run in browser memory with `pdf-lib`, PDF.js and selected files are not uploaded to a Paperlane server:
 
 - Merge PDF (`/merge-pdf`)
 - Split PDF (`/split-pdf`)
 - Rotate PDF (`/rotate-pdf`)
 - Reorder Pages (`/reorder-pdf`)
 - JPG/PNG to PDF (`/jpg-to-pdf`)
+- PDF to JPG/PNG (`/pdf-to-jpg`)
+- Remove Blank Pages (`/remove-blank-pages`)
 - Add Watermark (`/add-watermark`)
+- Visual Sign PDF (`/visual-sign-pdf`)
 
 Supported limits:
 
 - PDF tools: `.pdf`, maximum 50 MB per PDF
 - Merge PDF: 2 to 5 PDFs
 - JPG/PNG to PDF: `.jpg`, `.jpeg`, `.png`, maximum 20 MB per image, maximum 10 images
+- PDF to JPG/PNG: exports selected pages as individual image downloads
+- Remove Blank Pages: suggestions require user review before pages are removed
 - Add Watermark: watermark text is limited to 100 characters
+- Visual Sign PDF: creates a visual electronic signature only, not a cryptographic digital signature
 
 ## Concept Previews
 
-The remaining tools are labelled as concept previews and appear as roadmap items with disabled Coming soon actions. They do not process documents or create output files.
+The remaining 10 tools are labelled as concept previews and appear as roadmap items with disabled Coming soon actions. They do not process documents or create output files.
 
 ## Important Limitations
 

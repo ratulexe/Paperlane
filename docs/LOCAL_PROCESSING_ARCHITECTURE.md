@@ -1,6 +1,6 @@
 # Paperlane Local Processing Architecture
 
-Paperlane's six functional tools run in the browser. Selected files are read with `File.arrayBuffer()`, processed with `pdf-lib`, converted into `Blob` output, exposed through `URL.createObjectURL()`, and downloaded with a temporary anchor element.
+Paperlane's nine functional tools run in the browser. Selected files are read with `File.arrayBuffer()`, processed with `pdf-lib` and PDF.js where needed, converted into `Blob` output, exposed through `URL.createObjectURL()`, and downloaded with a temporary anchor element.
 
 ## Flow
 
@@ -15,7 +15,13 @@ Paperlane's six functional tools run in the browser. Selected files are read wit
 
 ## PDF.js Usage
 
-PDF.js is currently used only for Reorder Pages previews. It renders page previews in browser memory and uses a local worker asset emitted by Vite.
+PDF.js is used for Reorder Pages previews, PDF to JPG/PNG export, and Remove Blank Pages preview/suggestion rendering. It renders pages in browser memory and uses a local worker asset emitted by Vite.
+
+## Phase 8 Tools
+
+- PDF to JPG/PNG renders selected pages to canvas and exports individual JPG or PNG outputs.
+- Remove Blank Pages renders low-resolution previews, suggests likely blank pages, and removes only user-confirmed pages.
+- Visual Sign PDF adds a visual electronic signature. It is not a cryptographic digital signature and is not digitally certified.
 
 ## No-Server Boundary
 
@@ -23,4 +29,4 @@ Paperlane does not upload selected documents or generated outputs to a Paperlane
 
 ## Cleanup
 
-Generated object URLs are revoked through `revokeGeneratedOutputs()`. Reorder page preview URLs are separately tracked and revoked when previews are replaced or the workflow unmounts. ArrayBuffer values are local to async processing calls and are not persisted.
+Generated object URLs are revoked through `revokeGeneratedOutputs()`. Page preview URLs are separately tracked and revoked when previews are replaced or the workflow unmounts. ArrayBuffer values are local to async processing calls and are not persisted.

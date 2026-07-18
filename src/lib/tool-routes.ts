@@ -6,7 +6,10 @@ export const functionalToolRoutes = {
   "rotate-pdf": "/rotate-pdf",
   "reorder-pages": "/reorder-pdf",
   "jpg-to-pdf": "/jpg-to-pdf",
+  "pdf-to-jpg": "/pdf-to-jpg",
+  "remove-blank-pages": "/remove-blank-pages",
   "add-watermark": "/add-watermark",
+  "sign-document": "/visual-sign-pdf",
 } as const satisfies Partial<Record<DocumentTool["id"], string>>;
 
 export function getFunctionalToolRoute(tool: DocumentTool) {

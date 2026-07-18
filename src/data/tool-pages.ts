@@ -116,6 +116,42 @@ export const toolPageSpecs = {
       },
     ],
   },
+  "pdf-to-jpg": {
+    toolId: "pdf-to-jpg",
+    route: "/pdf-to-jpg",
+    title: "Convert PDF Pages to JPG or PNG Locally | Paperlane",
+    description: "Render selected PDF pages as JPG or PNG images directly in browser memory.",
+    badge: "Local image export",
+    h1: "Convert PDF pages to images locally.",
+    acceptedFormats: "PDF files only (.pdf)",
+    fileLimits: ["One PDF file", "Maximum 50 MB", "Exports selected pages as individual JPG or PNG files"],
+    relatedToolIds: ["jpg-to-pdf", "split-pdf", "remove-blank-pages"],
+    faq: [
+      ...sharedFaq,
+      {
+        question: "Are image outputs bundled into a ZIP?",
+        answer: "This phase creates individual image downloads first. ZIP bundling can be added after the core export workflow is verified.",
+      },
+    ],
+  },
+  "remove-blank-pages": {
+    toolId: "remove-blank-pages",
+    route: "/remove-blank-pages",
+    title: "Remove Blank PDF Pages Locally | Paperlane",
+    description: "Review likely blank pages and remove only the pages you confirm.",
+    badge: "Local review tool",
+    h1: "Remove reviewed blank pages locally.",
+    acceptedFormats: "PDF files only (.pdf)",
+    fileLimits: ["One PDF file", "Maximum 50 MB", "Blank-page suggestions require user review before removal"],
+    relatedToolIds: ["pdf-to-jpg", "reorder-pages", "split-pdf"],
+    faq: [
+      ...sharedFaq,
+      {
+        question: "Does Paperlane delete blank pages automatically?",
+        answer: "No. Paperlane suggests likely blank pages, but the user must review and confirm every page selected for removal.",
+      },
+    ],
+  },
   "add-watermark": {
     toolId: "add-watermark",
     route: "/add-watermark",
@@ -131,6 +167,24 @@ export const toolPageSpecs = {
       {
         question: "What font limitations apply?",
         answer: "The beta uses a standard embedded PDF font. Complex Unicode watermark text may not render as expected yet.",
+      },
+    ],
+  },
+  "sign-document": {
+    toolId: "sign-document",
+    route: "/visual-sign-pdf",
+    title: "Visually Sign a PDF Locally | Paperlane",
+    description: "Add a visual electronic signature to a PDF page without uploading the file.",
+    badge: "Visual electronic signature",
+    h1: "Add a visual electronic signature locally.",
+    acceptedFormats: "PDF files only (.pdf); optional JPG or PNG signature image",
+    fileLimits: ["One PDF file", "Maximum 50 MB", "Creates a visual signature only, not a cryptographic digital signature"],
+    relatedToolIds: ["add-watermark", "rotate-pdf", "reorder-pages"],
+    faq: [
+      ...sharedFaq,
+      {
+        question: "Is this a certified digital signature?",
+        answer: "No. This tool adds a visual electronic signature only. It does not create a cryptographic, certified or legally verified digital signature.",
       },
     ],
   },

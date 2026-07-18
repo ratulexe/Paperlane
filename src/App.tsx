@@ -12,7 +12,10 @@ const SplitPdfPage = lazy(() => import("@/pages/split-pdf-page").then((module) =
 const RotatePdfPage = lazy(() => import("@/pages/rotate-pdf-page").then((module) => ({ default: module.RotatePdfPage })));
 const ReorderPdfPage = lazy(() => import("@/pages/reorder-pdf-page").then((module) => ({ default: module.ReorderPdfPage })));
 const JpgToPdfPage = lazy(() => import("@/pages/jpg-to-pdf-page").then((module) => ({ default: module.JpgToPdfPage })));
+const PdfToJpgPage = lazy(() => import("@/pages/pdf-to-jpg-page").then((module) => ({ default: module.PdfToJpgPage })));
+const RemoveBlankPagesPage = lazy(() => import("@/pages/remove-blank-pages-page").then((module) => ({ default: module.RemoveBlankPagesPage })));
 const AddWatermarkPage = lazy(() => import("@/pages/add-watermark-page").then((module) => ({ default: module.AddWatermarkPage })));
+const VisualSignPdfPage = lazy(() => import("@/pages/visual-sign-pdf-page").then((module) => ({ default: module.VisualSignPdfPage })));
 const PrivacyPage = lazy(() => import("@/pages/privacy-page").then((module) => ({ default: module.PrivacyPage })));
 const ContactPage = lazy(() => import("@/pages/contact-page").then((module) => ({ default: module.ContactPage })));
 const NotFoundPage = lazy(() => import("@/pages/not-found-page").then((module) => ({ default: module.NotFoundPage })));
@@ -31,7 +34,10 @@ export default function App() {
           <Route path="/rotate-pdf" element={<RotatePdfPage />} />
           <Route path="/reorder-pdf" element={<ReorderPdfPage />} />
           <Route path="/jpg-to-pdf" element={<JpgToPdfPage />} />
+          <Route path="/pdf-to-jpg" element={<PdfToJpgPage />} />
+          <Route path="/remove-blank-pages" element={<RemoveBlankPagesPage />} />
           <Route path="/add-watermark" element={<AddWatermarkPage />} />
+          <Route path="/visual-sign-pdf" element={<VisualSignPdfPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="*" element={<NotFoundPage />} />

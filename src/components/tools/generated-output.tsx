@@ -1,16 +1,22 @@
 import { useState } from "react";
-import { Download, Trash2 } from "lucide-react";
+import { Download, PackageIcon, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { downloadGeneratedOutput, sanitizeFilename } from "@/lib/pdf/download-file";
+import { createZipBlob, downloadBlob, downloadGeneratedOutput, sanitizeFilename } from "@/lib/pdf/download-file";
 import { formatFileSize } from "@/lib/file-demo";
 import type { GeneratedOutput } from "@/types/processing";
 
 function getDownloadFilename(output: GeneratedOutput, filename: string) {
   const sanitized = sanitizeFilename(filename || output.filename);
-  return sanitized.toLowerCase().endsWith(".pdf") ? sanitized : `${sanitized}.pdf`;
+  const extension =
+    output.mimeType === "image/jpeg"
+      ? ".jpg"
+      : output.mimeType === "image/png"
+        ? ".png"
+        : ".pdf";
+  return sanitized.toLowerCase().endsWith(extension) ? sanitized : `${sanitized}${extension}`;
 }
 
 function getDownloadButtonLabel(output: GeneratedOutput) {
@@ -24,6 +30,10 @@ function getDownloadButtonLabel(output: GeneratedOutput) {
   if (filename.includes("reordered")) return "Download Reordered PDF";
   if (filename.includes("images")) return "Download Image PDF";
   if (filename.includes("watermarked")) return "Download Watermarked PDF";
+  if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) return "Download JPG";
+  if (filename.endsWith(".png")) return "Download PNG";
+  if (filename.includes("blank-pages-removed")) return "Download Cleaned PDF";
+  if (filename.includes("visually-signed")) return "Download Signed PDF";
 
   return "Download PDF";
 }
@@ -39,6 +49,18 @@ export function GeneratedOutputList({
 
   if (!outputs.length) return null;
 
+  const canDownloadZip = outputs.length > 1 && outputs.every((output) => output.mimeType === "image/jpeg" || output.mimeType === "image/png");
+
+  const downloadZip = async () => {
+    const zipBlob = await createZipBlob(
+      outputs.map((output) => ({
+        filename: getDownloadFilename(output, downloadNames[output.objectUrl] ?? output.filename),
+        blob: output.blob,
+      })),
+    );
+    downloadBlob(zipBlob, "paperlane-images.zip");
+  };
+
   return (
     <Card className="border-primary/20 bg-secondary/35 shadow-none">
       <CardContent className="space-y-3 p-4">
@@ -48,6 +70,18 @@ export function GeneratedOutputList({
             Processing completed locally in your browser. Your file was not uploaded to a Paperlane server.
           </p>
         </div>
+        {canDownloadZip ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-3">
+            <div>
+              <p className="text-sm font-semibold">Download all images</p>
+              <p className="text-xs text-muted-foreground">Creates a ZIP locally in this browser using the names below.</p>
+            </div>
+            <Button type="button" onClick={() => void downloadZip()}>
+              <PackageIcon className="h-4 w-4" aria-hidden="true" />
+              Download ZIP
+            </Button>
+          </div>
+        ) : null}
         <div className="grid gap-2">
           {outputs.map((output, index) => {
             const downloadName = downloadNames[output.objectUrl] ?? output.filename;
