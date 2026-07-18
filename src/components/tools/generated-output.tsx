@@ -10,7 +10,13 @@ import type { GeneratedOutput } from "@/types/processing";
 
 function getDownloadFilename(output: GeneratedOutput, filename: string) {
   const sanitized = sanitizeFilename(filename || output.filename);
-  return sanitized.toLowerCase().endsWith(".pdf") ? sanitized : `${sanitized}.pdf`;
+  const extension =
+    output.mimeType === "image/jpeg"
+      ? ".jpg"
+      : output.mimeType === "image/png"
+        ? ".png"
+        : ".pdf";
+  return sanitized.toLowerCase().endsWith(extension) ? sanitized : `${sanitized}${extension}`;
 }
 
 function getDownloadButtonLabel(output: GeneratedOutput) {
@@ -24,6 +30,10 @@ function getDownloadButtonLabel(output: GeneratedOutput) {
   if (filename.includes("reordered")) return "Download Reordered PDF";
   if (filename.includes("images")) return "Download Image PDF";
   if (filename.includes("watermarked")) return "Download Watermarked PDF";
+  if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) return "Download JPG";
+  if (filename.endsWith(".png")) return "Download PNG";
+  if (filename.includes("blank-pages-removed")) return "Download Cleaned PDF";
+  if (filename.includes("visually-signed")) return "Download Signed PDF";
 
   return "Download PDF";
 }

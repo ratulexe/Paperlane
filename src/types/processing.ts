@@ -19,3 +19,7 @@ export type ImagePdfPageSize = "fit" | "a4-portrait" | "a4-landscape";
 export type ImagePdfMargin = "none" | "small" | "medium";
 
 export type WatermarkPosition = "centre" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
+
+export type PdfImageExportFormat = "jpg" | "png";
+
+export type SignatureMode = "draw" | "type" | "upload";

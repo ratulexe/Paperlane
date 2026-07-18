@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState, type ClipboardEvent, type DragEvent, type KeyboardEvent } from "react";
-import { ArrowDown, ArrowUp, File, FilePlus2, MoveHorizontal, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type ClipboardEvent, type DragEvent, type KeyboardEvent, type PointerEvent } from "react";
+import { ArrowDown, ArrowUp, Eraser, File, FilePlus2, MoveHorizontal, Trash2, Upload } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
 import { PDFDocument } from "pdf-lib";
@@ -9,21 +9,26 @@ import { LocalProcessingStatus } from "@/components/tools/local-processing-statu
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { validateImageFile, validateImageFiles, validateMergeFiles, validatePdfFile } from "@/lib/pdf/file-validation";
+import { detectBlankImageData } from "@/lib/pdf/blank-page-detection";
 import { createGeneratedOutput, revokeGeneratedOutputs } from "@/lib/pdf/download-file";
 import { imagesToPdf } from "@/lib/pdf/images-to-pdf";
 import { mergePdfFiles } from "@/lib/pdf/merge-pdf";
 import { parsePageRange } from "@/lib/pdf/page-range";
 import { PdfProcessingError, toUserFacingPdfError } from "@/lib/pdf/pdf-errors";
+import { pdfPagesToImages } from "@/lib/pdf/pdf-to-images";
 import { readFileBytes } from "@/lib/pdf/read-file-bytes";
+import { removePdfPages } from "@/lib/pdf/remove-blank-pages";
 import { createInitialPageOrder, movePageInOrder } from "@/lib/pdf/reorder-utils";
 import { reorderPdfPages } from "@/lib/pdf/reorder-pdf";
 import { rotatePdfPages } from "@/lib/pdf/rotate-pdf";
 import { extractPdfPages, getPdfPageCount, splitPdfEveryPage } from "@/lib/pdf/split-pdf";
+import { visualSignPdf, type VisualSignatureInput } from "@/lib/pdf/visual-sign-pdf";
 import { watermarkPdf } from "@/lib/pdf/watermark-pdf";
 import { formatFileSize, getFileExtension } from "@/lib/file-demo";
 import { cn } from "@/lib/utils";
@@ -32,8 +37,10 @@ import type {
   GeneratedOutput,
   ImagePdfMargin,
   ImagePdfPageSize,
+  PdfImageExportFormat,
   ProcessingStatus,
   RotationOption,
+  SignatureMode,
   SplitMode,
   WatermarkPosition,
 } from "@/types/processing";
@@ -83,6 +90,8 @@ type FunctionalToolWorkflowProps = {
 
 export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalToolWorkflowProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const signatureImageInputRef = useRef<HTMLInputElement>(null);
+  const signatureCanvasRef = useRef<HTMLCanvasElement>(null);
   const pagePreviewUrlsRef = useRef<PagePreviewUrls>({});
   const addFilesRef = useRef<(incomingFiles: FileList | File[]) => Promise<void>>(async () => undefined);
   const canProcessRef = useRef(false);
@@ -103,9 +112,23 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
   const [watermarkSize, setWatermarkSize] = useState(36);
   const [watermarkOpacity, setWatermarkOpacity] = useState(0.35);
   const [watermarkPosition, setWatermarkPosition] = useState<WatermarkPosition>("centre");
+  const [pdfImageFormat, setPdfImageFormat] = useState<PdfImageExportFormat>("jpg");
+  const [blankPageSuggestions, setBlankPageSuggestions] = useState<number[]>([]);
+  const [blankPageSelections, setBlankPageSelections] = useState<number[]>([]);
+  const [signatureMode, setSignatureMode] = useState<SignatureMode>("draw");
+  const [signatureText, setSignatureText] = useState("");
+  const [signatureImageFile, setSignatureImageFile] = useState<File | null>(null);
+  const [signaturePage, setSignaturePage] = useState("1");
+  const [signaturePosition, setSignaturePosition] = useState<WatermarkPosition>("bottom-right");
+  const [signatureWidth, setSignatureWidth] = useState(28);
+  const [isDrawingSignature, setIsDrawingSignature] = useState(false);
+  const [hasDrawnSignature, setHasDrawnSignature] = useState(false);
   const [isDraggingFiles, setIsDraggingFiles] = useState(false);
 
   const isImageTool = tool.id === "jpg-to-pdf";
+  const isPdfToImagesTool = tool.id === "pdf-to-jpg";
+  const isRemoveBlankPagesTool = tool.id === "remove-blank-pages";
+  const isSignatureTool = tool.id === "sign-document";
   const allowMultiple = tool.id === "merge-pdf" || isImageTool;
   const accept = isImageTool ? ".jpg,.jpeg,.png" : undefined;
   const canProcess = status !== "validating" && status !== "reading" && status !== "processing" && status !== "preparing-output";
@@ -135,6 +158,55 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
     replacePagePreviewUrls({});
   }, [replacePagePreviewUrls]);
 
+  function clearSignatureCanvas() {
+    const canvas = signatureCanvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) return;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    setIsDrawingSignature(false);
+    setHasDrawnSignature(false);
+  }
+
+  function getSignatureCanvasPoint(event: PointerEvent<HTMLCanvasElement>) {
+    const canvas = event.currentTarget;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * canvas.width,
+      y: ((event.clientY - rect.top) / rect.height) * canvas.height,
+    };
+  }
+
+  function startSignatureStroke(event: PointerEvent<HTMLCanvasElement>) {
+    const context = event.currentTarget.getContext("2d");
+    if (!context) return;
+    const point = getSignatureCanvasPoint(event);
+    event.currentTarget.setPointerCapture(event.pointerId);
+    context.strokeStyle = "#111827";
+    context.lineWidth = 4;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.beginPath();
+    context.moveTo(point.x, point.y);
+    setIsDrawingSignature(true);
+    setHasDrawnSignature(true);
+  }
+
+  function continueSignatureStroke(event: PointerEvent<HTMLCanvasElement>) {
+    if (!isDrawingSignature) return;
+    const context = event.currentTarget.getContext("2d");
+    if (!context) return;
+    const point = getSignatureCanvasPoint(event);
+    context.lineTo(point.x, point.y);
+    context.stroke();
+  }
+
+  function endSignatureStroke(event: PointerEvent<HTMLCanvasElement>) {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    setIsDrawingSignature(false);
+  }
+
   const resetWorkflow = () => {
     clearOutputs();
     clearPagePreviewUrls();
@@ -153,6 +225,17 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
     setWatermarkSize(36);
     setWatermarkOpacity(0.35);
     setWatermarkPosition("centre");
+    setPdfImageFormat("jpg");
+    setBlankPageSuggestions([]);
+    setBlankPageSelections([]);
+    setSignatureMode("draw");
+    setSignatureText("");
+    setSignatureImageFile(null);
+    setSignaturePage("1");
+    setSignaturePosition("bottom-right");
+    setSignatureWidth(28);
+    setHasDrawnSignature(false);
+    clearSignatureCanvas();
   };
 
   useEffect(() => {
@@ -168,7 +251,7 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
   const selectedFile = files[0];
 
   useEffect(() => {
-    if (tool.id !== "reorder-pages" || !selectedFile || !pageCount) return;
+    if ((tool.id !== "reorder-pages" && !isRemoveBlankPagesTool) || !selectedFile || !pageCount) return;
 
     let cancelled = false;
 
@@ -177,6 +260,7 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
       const loadingTask = pdfjsLib.getDocument({ data });
       const pdf = await loadingTask.promise;
       const nextPreviewUrls: PagePreviewUrls = {};
+      const nextBlankSuggestions: number[] = [];
 
       try {
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
@@ -199,6 +283,10 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
           context.scale(outputScale, outputScale);
 
           await page.render({ canvas, canvasContext: context, viewport }).promise;
+          if (isRemoveBlankPagesTool) {
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            if (detectBlankImageData(imageData).isLikelyBlank) nextBlankSuggestions.push(pageNumber - 1);
+          }
           const blob = await canvasToBlob(canvas);
           nextPreviewUrls[pageNumber - 1] = URL.createObjectURL(blob);
         }
@@ -209,6 +297,10 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
         }
 
         replacePagePreviewUrls(nextPreviewUrls);
+        if (isRemoveBlankPagesTool) {
+          setBlankPageSuggestions(nextBlankSuggestions);
+          setBlankPageSelections(nextBlankSuggestions);
+        }
       } finally {
         await loadingTask.destroy();
       }
@@ -221,7 +313,7 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
     return () => {
       cancelled = true;
     };
-  }, [clearPagePreviewUrls, pageCount, replacePagePreviewUrls, selectedFile, tool.id]);
+  }, [clearPagePreviewUrls, isRemoveBlankPagesTool, pageCount, replacePagePreviewUrls, selectedFile, tool.id]);
 
   const resetGeneratedState = () => {
     clearOutputs();
@@ -235,6 +327,9 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
 
     resetGeneratedState();
     setStatus("validating");
+    setBlankPageSuggestions([]);
+    setBlankPageSelections([]);
+    setSignaturePage("1");
     const nextFiles = allowMultiple ? [...files] : [];
     const limit = tool.id === "merge-pdf" ? 5 : isImageTool ? 10 : 1;
 
@@ -258,10 +353,13 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
         setPageCount(count);
         setPageOrder(createInitialPageOrder(count));
         setPageRange(count > 1 ? `1-${Math.min(count, 3)}` : "1");
+        setSignaturePage("1");
       }
     } catch (loadError) {
       setPageCount(0);
       setPageOrder([]);
+      setBlankPageSuggestions([]);
+      setBlankPageSelections([]);
       clearPagePreviewUrls();
       setError(toUserFacingPdfError(loadError));
       setStatus("error");
@@ -352,6 +450,8 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
     if (!next.length) {
       setPageCount(0);
       setPageOrder([]);
+      setBlankPageSuggestions([]);
+      setBlankPageSelections([]);
       clearPagePreviewUrls();
     }
   };
@@ -376,6 +476,53 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
   const selectedPages = () => {
     if (applyMode === "all") return Array.from({ length: pageCount }, (_, index) => index);
     return parsePageRange(pageRange, pageCount);
+  };
+
+  const toggleBlankPageSelection = (pageIndex: number, checked: boolean) => {
+    setBlankPageSelections((current) => {
+      const next = new Set(current);
+      if (checked) next.add(pageIndex);
+      else next.delete(pageIndex);
+      return [...next].sort((a, b) => a - b);
+    });
+    resetGeneratedState();
+  };
+
+  const getDrawnSignatureInput = () => {
+    const canvas = signatureCanvasRef.current;
+    if (!canvas || !hasDrawnSignature) {
+      throw new PdfProcessingError("Draw a signature before processing.", "INVALID_WATERMARK");
+    }
+
+    return new Promise<VisualSignatureInput>((resolve, reject) => {
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          reject(new PdfProcessingError("Paperlane could not create your drawn signature.", "PROCESSING_FAILED"));
+          return;
+        }
+
+        resolve({
+          kind: "image",
+          bytes: new Uint8Array(await blob.arrayBuffer()),
+          mimeType: "image/png",
+        });
+      }, "image/png");
+    });
+  };
+
+  const getSignatureInput = async (): Promise<VisualSignatureInput> => {
+    if (signatureMode === "type") return { kind: "typed", text: signatureText };
+    if (signatureMode === "upload") {
+      if (!signatureImageFile) throw new PdfProcessingError("Upload a signature image before processing.", "INVALID_IMAGE");
+      validateImageFile(signatureImageFile);
+      return {
+        kind: "image",
+        bytes: await readFileBytes(signatureImageFile),
+        mimeType: signatureImageFile.type || (signatureImageFile.name.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg"),
+      };
+    }
+
+    return getDrawnSignatureInput();
   };
 
   const requireFiles = () => {
@@ -421,6 +568,11 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
         generated = [createGeneratedOutput(await reorderPdfPages(selectedFiles[0], pageOrder), "paperlane-reordered.pdf")];
       } else if (tool.id === "jpg-to-pdf") {
         generated = [createGeneratedOutput(await imagesToPdf(selectedFiles, imagePageSize, imageMargin), "paperlane-images.pdf")];
+      } else if (tool.id === "pdf-to-jpg") {
+        const imageOutputs = await pdfPagesToImages(selectedFiles[0], selectedPages(), pdfImageFormat);
+        generated = imageOutputs.map((output) => createGeneratedOutput(output.bytes, output.filename, output.mimeType));
+      } else if (tool.id === "remove-blank-pages") {
+        generated = [createGeneratedOutput(await removePdfPages(selectedFiles[0], blankPageSelections), "paperlane-blank-pages-removed.pdf")];
       } else if (tool.id === "add-watermark") {
         generated = [
           createGeneratedOutput(
@@ -432,6 +584,18 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
               pageIndexes: selectedPages(),
             }),
             "paperlane-watermarked.pdf",
+          ),
+        ];
+      } else if (tool.id === "sign-document") {
+        generated = [
+          createGeneratedOutput(
+            await visualSignPdf(selectedFiles[0], {
+              pageIndex: Number(signaturePage) - 1,
+              position: signaturePosition,
+              widthPercent: signatureWidth,
+              input: await getSignatureInput(),
+            }),
+            "paperlane-visually-signed.pdf",
           ),
         ];
       }
@@ -642,6 +806,175 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
                 <SelectItem value="medium">Medium</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </div>
+      ) : null}
+
+      {isPdfToImagesTool ? (
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-2">
+            <Label>Image format</Label>
+            <Select value={pdfImageFormat} onValueChange={(value) => setPdfImageFormat(value as PdfImageExportFormat)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="jpg">JPG</SelectItem>
+                <SelectItem value="png">PNG</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <PageRangeControls applyMode={applyMode} pageRange={pageRange} onApplyModeChange={setApplyMode} onPageRangeChange={setPageRange} />
+        </div>
+      ) : null}
+
+      {isRemoveBlankPagesTool && pageOrder.length ? (
+        <div className="space-y-3">
+          <div className="rounded-xl border bg-muted/25 p-3 text-sm text-muted-foreground">
+            Paperlane suggests likely blank pages, but nothing is removed automatically. Review the previews and confirm the pages to remove.
+          </div>
+          <p className="text-sm font-semibold">
+            {blankPageSuggestions.length
+              ? `Suggested blank pages: ${blankPageSuggestions.map((index) => `Page ${index + 1}`).join(", ")}`
+              : "No likely blank pages detected. You can still choose pages manually."}
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {pageOrder.map((pageIndex) => {
+              const checked = blankPageSelections.includes(pageIndex);
+              const suggested = blankPageSuggestions.includes(pageIndex);
+              return (
+                <div key={pageIndex} className={cn("rounded-lg border bg-card p-3", checked && "border-primary/60 bg-secondary/40")}>
+                  <div className="overflow-hidden rounded-md border bg-muted/35">
+                    <div className="aspect-[3/4]">
+                      {pagePreviewUrls[pageIndex] ? (
+                        <img className="h-full w-full object-contain" src={pagePreviewUrls[pageIndex]} alt={`Preview of page ${pageIndex + 1}`} />
+                      ) : (
+                        <div className="flex h-full items-center justify-center p-4 text-center text-sm text-muted-foreground">
+                          Rendering page preview...
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-start gap-3">
+                    <Checkbox
+                      id={`blank-page-${pageIndex}`}
+                      checked={checked}
+                      onCheckedChange={(value) => toggleBlankPageSelection(pageIndex, value === true)}
+                      disabled={!canProcess}
+                    />
+                    <div className="grid gap-1">
+                      <Label htmlFor={`blank-page-${pageIndex}`}>Remove Page {pageIndex + 1}</Label>
+                      <p className="text-xs text-muted-foreground">{suggested ? "Likely blank" : "Not suggested"}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      {isSignatureTool ? (
+        <div className="space-y-4">
+          <div className="rounded-xl border bg-muted/25 p-3 text-sm text-muted-foreground">
+            This creates a visual electronic signature only. It is not digitally certified, cryptographically signed or legally verified.
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label>Signature source</Label>
+              <Select value={signatureMode} onValueChange={(value) => setSignatureMode(value as SignatureMode)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draw">Draw signature</SelectItem>
+                  <SelectItem value="type">Type signature</SelectItem>
+                  <SelectItem value="upload">Upload signature image</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="signature-page">Page</Label>
+              <Input id="signature-page" type="number" min={1} max={Math.max(pageCount, 1)} value={signaturePage} onChange={(event) => setSignaturePage(event.target.value)} />
+            </div>
+          </div>
+
+          {signatureMode === "draw" ? (
+            <div className="space-y-3">
+              <canvas
+                ref={signatureCanvasRef}
+                width={700}
+                height={220}
+                className="h-40 w-full touch-none rounded-xl border bg-background"
+                aria-label="Draw visual signature"
+                onPointerDown={startSignatureStroke}
+                onPointerMove={continueSignatureStroke}
+                onPointerUp={endSignatureStroke}
+                onPointerCancel={endSignatureStroke}
+                onPointerLeave={endSignatureStroke}
+              />
+              <Button type="button" variant="outline" onClick={clearSignatureCanvas}>
+                <Eraser className="h-4 w-4" aria-hidden="true" />
+                Clear Signature
+              </Button>
+            </div>
+          ) : null}
+
+          {signatureMode === "type" ? (
+            <div className="grid gap-2">
+              <Label htmlFor="signature-text">Signature text</Label>
+              <Input id="signature-text" value={signatureText} onChange={(event) => setSignatureText(event.target.value)} placeholder="Type a name" maxLength={80} />
+            </div>
+          ) : null}
+
+          {signatureMode === "upload" ? (
+            <div className="space-y-3">
+              <input
+                ref={signatureImageInputRef}
+                type="file"
+                className="sr-only"
+                accept=".jpg,.jpeg,.png"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) {
+                    try {
+                      validateImageFile(file);
+                      setSignatureImageFile(file);
+                      resetGeneratedState();
+                    } catch (signatureError) {
+                      setError(toUserFacingPdfError(signatureError));
+                      setStatus("error");
+                    }
+                  }
+                  event.target.value = "";
+                }}
+              />
+              <Button type="button" variant="outline" onClick={() => signatureImageInputRef.current?.click()}>
+                <Upload className="h-4 w-4" aria-hidden="true" />
+                Upload Signature Image
+              </Button>
+              {signatureImageFile ? (
+                <p className="text-sm text-muted-foreground">
+                  Selected: {signatureImageFile.name} · {formatFileSize(signatureImageFile.size)}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label>Placement</Label>
+              <Select value={signaturePosition} onValueChange={(value) => setSignaturePosition(value as WatermarkPosition)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="centre">Centre</SelectItem>
+                  <SelectItem value="top-left">Top left</SelectItem>
+                  <SelectItem value="top-right">Top right</SelectItem>
+                  <SelectItem value="bottom-left">Bottom left</SelectItem>
+                  <SelectItem value="bottom-right">Bottom right</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Signature width: {signatureWidth}%</Label>
+              <Slider value={[signatureWidth]} min={12} max={60} step={1} onValueChange={([value]) => setSignatureWidth(value)} />
+            </div>
           </div>
         </div>
       ) : null}
