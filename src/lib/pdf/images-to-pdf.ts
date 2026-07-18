@@ -1,5 +1,7 @@
 import { PDFDocument } from "pdf-lib";
+import { validateImageFiles } from "@/lib/pdf/file-validation";
 import { PdfProcessingError } from "@/lib/pdf/pdf-errors";
+import { readFileBytes } from "@/lib/pdf/read-file-bytes";
 import type { ImagePdfMargin, ImagePdfPageSize } from "@/types/processing";
 
 const a4Portrait: [number, number] = [595.28, 841.89];
@@ -10,17 +12,20 @@ const marginValues: Record<ImagePdfMargin, number> = {
 };
 
 export async function imagesToPdf(files: File[], pageSize: ImagePdfPageSize, margin: ImagePdfMargin) {
-  if (!files.length) throw new PdfProcessingError("Choose at least one image.");
-  if (files.length > 10) throw new PdfProcessingError("Image to PDF supports up to 10 images.");
+  validateImageFiles(files);
 
   const pdf = await PDFDocument.create();
   const pageMargin = marginValues[margin];
 
   for (const file of files) {
-    const bytes = await file.arrayBuffer();
+    const bytes = await readFileBytes(file);
     const image = file.type === "image/png" || file.name.toLowerCase().endsWith(".png")
-      ? await pdf.embedPng(bytes)
-      : await pdf.embedJpg(bytes);
+      ? await pdf.embedPng(bytes).catch(() => {
+        throw new PdfProcessingError("Paperlane could not read this PNG image.", "INVALID_IMAGE");
+      })
+      : await pdf.embedJpg(bytes).catch(() => {
+        throw new PdfProcessingError("Paperlane could not read this JPEG image.", "INVALID_IMAGE");
+      });
 
     const [pageWidth, pageHeight] =
       pageSize === "fit"

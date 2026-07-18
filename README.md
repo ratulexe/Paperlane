@@ -17,6 +17,12 @@ Privacy-conscious document productivity SaaS concept with selected browser-local
 - Home
 - About
 - Tools
+- Merge PDF: `/merge-pdf`
+- Split PDF: `/split-pdf`
+- Rotate PDF: `/rotate-pdf`
+- Reorder PDF: `/reorder-pdf`
+- JPG/PNG to PDF: `/jpg-to-pdf`
+- Add Watermark: `/add-watermark`
 - Privacy
 - Contact
 
@@ -70,20 +76,35 @@ npm run build
 npm run preview
 ```
 
+## Testing
+
+```bash
+npm run lint
+npm run test:run
+npm run build
+```
+
 ## Functional Tools
 
 The following tools run in browser memory with `pdf-lib` and selected files are not uploaded to a Paperlane server:
 
-- Merge PDF
-- Split PDF
-- Rotate PDF
-- Reorder Pages
-- JPG/PNG to PDF
-- Add Watermark
+- Merge PDF (`/merge-pdf`)
+- Split PDF (`/split-pdf`)
+- Rotate PDF (`/rotate-pdf`)
+- Reorder Pages (`/reorder-pdf`)
+- JPG/PNG to PDF (`/jpg-to-pdf`)
+- Add Watermark (`/add-watermark`)
+
+Supported limits:
+
+- PDF tools: `.pdf`, maximum 50 MB per PDF
+- Merge PDF: 2 to 5 PDFs
+- JPG/PNG to PDF: `.jpg`, `.jpeg`, `.png`, maximum 20 MB per image, maximum 10 images
+- Add Watermark: watermark text is limited to 100 characters
 
 ## Concept Previews
 
-The remaining tools are interface previews only. They may accept a file selection to show metadata and workflow states, but they do not process documents or create output files.
+The remaining tools are labelled as concept previews and appear as roadmap items with disabled Coming soon actions. They do not process documents or create output files.
 
 ## Important Limitations
 
@@ -99,6 +120,12 @@ Paperlane is still a product concept, not a production document platform.
 - No database
 - Browser-local processing can use significant device memory
 - Local processing reduces server exposure but does not guarantee complete security on untrusted, shared or compromised devices
+
+## Documentation
+
+- [Local processing architecture](docs/LOCAL_PROCESSING_ARCHITECTURE.md)
+- [Testing guide](docs/TESTING_GUIDE.md)
+- [Known limitations](docs/KNOWN_LIMITATIONS.md)
 
 ## AI-Assisted Development
 

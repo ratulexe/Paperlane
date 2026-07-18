@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, File, MoveHorizontal, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type ClipboardEvent, type DragEvent, type KeyboardEvent } from "react";
+import { ArrowDown, ArrowUp, File, FilePlus2, MoveHorizontal, Trash2 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
 import { PDFDocument } from "pdf-lib";
@@ -13,16 +13,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { validateImageFile, validateImageFiles, validateMergeFiles, validatePdfFile } from "@/lib/pdf/file-validation";
 import { createGeneratedOutput, revokeGeneratedOutputs } from "@/lib/pdf/download-file";
 import { imagesToPdf } from "@/lib/pdf/images-to-pdf";
 import { mergePdfFiles } from "@/lib/pdf/merge-pdf";
 import { parsePageRange } from "@/lib/pdf/page-range";
 import { PdfProcessingError, toUserFacingPdfError } from "@/lib/pdf/pdf-errors";
+import { readFileBytes } from "@/lib/pdf/read-file-bytes";
+import { createInitialPageOrder, movePageInOrder } from "@/lib/pdf/reorder-utils";
 import { reorderPdfPages } from "@/lib/pdf/reorder-pdf";
 import { rotatePdfPages } from "@/lib/pdf/rotate-pdf";
 import { extractPdfPages, getPdfPageCount, splitPdfEveryPage } from "@/lib/pdf/split-pdf";
 import { watermarkPdf } from "@/lib/pdf/watermark-pdf";
 import { formatFileSize, getFileExtension } from "@/lib/file-demo";
+import { cn } from "@/lib/utils";
 import type { DocumentTool } from "@/types/tool";
 import type {
   GeneratedOutput,
@@ -34,34 +38,9 @@ import type {
   WatermarkPosition,
 } from "@/types/processing";
 
-const pdfMaxSize = 50 * 1024 * 1024;
-const imageMaxSize = 20 * 1024 * 1024;
-const pdfMimeTypes = ["application/pdf"];
-const imageMimeTypes = ["image/jpeg", "image/png"];
-
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
 type PagePreviewUrls = Record<number, string>;
-
-function isPdfFile(file: File) {
-  return pdfMimeTypes.includes(file.type) || file.name.toLowerCase().endsWith(".pdf");
-}
-
-function isImageFile(file: File) {
-  const name = file.name.toLowerCase();
-  return imageMimeTypes.includes(file.type) || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png");
-}
-
-function validateFunctionalFile(file: File, kind: "pdf" | "image") {
-  if (kind === "pdf") {
-    if (!isPdfFile(file)) return "Choose a valid PDF file.";
-    if (file.size > pdfMaxSize) return "Choose a PDF smaller than 50 MB.";
-    return "";
-  }
-  if (!isImageFile(file)) return "Choose a JPG or PNG image.";
-  if (file.size > imageMaxSize) return "Choose images smaller than 20 MB each.";
-  return "";
-}
 
 function revokePagePreviewUrls(previews: PagePreviewUrls) {
   Object.values(previews).forEach((previewUrl) => URL.revokeObjectURL(previewUrl));
@@ -77,13 +56,24 @@ function canvasToBlob(canvas: HTMLCanvasElement) {
 }
 
 async function readPageCount(file: File) {
-  if (!isPdfFile(file)) return 0;
+  validatePdfFile(file);
   return getPdfPageCount(file);
 }
 
 type LocalFile = {
   id: string;
   file: File;
+};
+
+type FileSystemFileHandleLike = {
+  getFile: () => Promise<File>;
+};
+
+type WindowWithFilePicker = Window & {
+  showOpenFilePicker?: (options?: {
+    excludeAcceptAllOption?: boolean;
+    multiple?: boolean;
+  }) => Promise<FileSystemFileHandleLike[]>;
 };
 
 type FunctionalToolWorkflowProps = {
@@ -94,6 +84,8 @@ type FunctionalToolWorkflowProps = {
 export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalToolWorkflowProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const pagePreviewUrlsRef = useRef<PagePreviewUrls>({});
+  const addFilesRef = useRef<(incomingFiles: FileList | File[]) => Promise<void>>(async () => undefined);
+  const canProcessRef = useRef(false);
   const [files, setFiles] = useState<LocalFile[]>([]);
   const [pagePreviewUrls, setPagePreviewUrls] = useState<PagePreviewUrls>({});
   const [pageCount, setPageCount] = useState(0);
@@ -111,12 +103,15 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
   const [watermarkSize, setWatermarkSize] = useState(36);
   const [watermarkOpacity, setWatermarkOpacity] = useState(0.35);
   const [watermarkPosition, setWatermarkPosition] = useState<WatermarkPosition>("centre");
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
 
   const isImageTool = tool.id === "jpg-to-pdf";
   const allowMultiple = tool.id === "merge-pdf" || isImageTool;
-  const accept = isImageTool ? ".jpg,.jpeg,.png,image/jpeg,image/png" : ".pdf,application/pdf";
-  const canProcess = status !== "reading" && status !== "processing" && status !== "preparing-output";
+  const accept = isImageTool ? ".jpg,.jpeg,.png" : undefined;
+  const canProcess = status !== "validating" && status !== "reading" && status !== "processing" && status !== "preparing-output";
   const chooseFileLabel = isImageTool ? "Select JPG/PNG Images" : "Choose PDF Files";
+  const dropzoneTitle = isImageTool ? "Drop JPG/PNG images here" : "Drop PDF files here";
+  const acceptedFileSummary = isImageTool ? ".jpg, .jpeg, .png" : ".pdf";
   const primaryActionLabel = isImageTool
     ? outputs.length
       ? "Convert Again"
@@ -140,6 +135,26 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
     replacePagePreviewUrls({});
   }, [replacePagePreviewUrls]);
 
+  const resetWorkflow = () => {
+    clearOutputs();
+    clearPagePreviewUrls();
+    setFiles([]);
+    setPageCount(0);
+    setPageOrder([]);
+    setStatus("idle");
+    setError("");
+    setSplitMode("extract");
+    setPageRange("1");
+    setRotation("90-clockwise");
+    setApplyMode("all");
+    setImagePageSize("fit");
+    setImageMargin("small");
+    setWatermarkText("Confidential");
+    setWatermarkSize(36);
+    setWatermarkOpacity(0.35);
+    setWatermarkPosition("centre");
+  };
+
   useEffect(() => {
     return () => revokeGeneratedOutputs(outputs);
   }, [outputs]);
@@ -158,7 +173,7 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
     let cancelled = false;
 
     const renderPagePreviews = async () => {
-      const data = await selectedFile.file.arrayBuffer();
+      const data = await readFileBytes(selectedFile.file);
       const loadingTask = pdfjsLib.getDocument({ data });
       const pdf = await loadingTask.promise;
       const nextPreviewUrls: PagePreviewUrls = {};
@@ -215,45 +230,120 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
   };
 
   const addFiles = async (incomingFiles: FileList | File[]) => {
-    resetGeneratedState();
     const incoming = Array.from(incomingFiles);
+    if (!incoming.length) return;
+
+    resetGeneratedState();
+    setStatus("validating");
     const nextFiles = allowMultiple ? [...files] : [];
     const limit = tool.id === "merge-pdf" ? 5 : isImageTool ? 10 : 1;
-    const kind = isImageTool ? "image" : "pdf";
 
-    for (const file of incoming) {
-      const validationError = validateFunctionalFile(file, kind);
-      if (validationError) {
-        setError(validationError);
-        setStatus("error");
-        return;
+    try {
+      for (const file of incoming) {
+        if (isImageTool) validateImageFile(file);
+        else validatePdfFile(file);
+        await readFileBytes(file);
+        if (nextFiles.length >= limit) {
+          throw new PdfProcessingError(isImageTool ? "Choose up to 10 images." : "Merge PDF supports up to five files.", "TOO_MANY_FILES");
+        }
+        nextFiles.push({ id: `${file.name}-${file.size}-${file.lastModified}-${crypto.randomUUID()}`, file });
+        if (!allowMultiple) break;
       }
-      if (nextFiles.length >= limit) {
-        setError(isImageTool ? "Choose up to 10 images." : "Merge PDF supports up to five files.");
-        setStatus("error");
-        return;
-      }
-      nextFiles.push({ id: `${file.name}-${file.size}-${file.lastModified}-${crypto.randomUUID()}`, file });
-      if (!allowMultiple) break;
-    }
 
-    setFiles(nextFiles);
-    if (isImageTool || allowMultiple) clearPagePreviewUrls();
-    if (!isImageTool && nextFiles.length === 1) {
-      try {
+      setFiles(nextFiles);
+      setStatus("idle");
+      if (isImageTool || allowMultiple) clearPagePreviewUrls();
+      if (!isImageTool && nextFiles.length === 1) {
         const count = await readPageCount(nextFiles[0].file);
         setPageCount(count);
-        setPageOrder(Array.from({ length: count }, (_, index) => index));
+        setPageOrder(createInitialPageOrder(count));
         setPageRange(count > 1 ? `1-${Math.min(count, 3)}` : "1");
-      } catch (loadError) {
-        setPageCount(0);
-        setPageOrder([]);
-        clearPagePreviewUrls();
-        setError(toUserFacingPdfError(loadError));
-        setStatus("error");
       }
+    } catch (loadError) {
+      setPageCount(0);
+      setPageOrder([]);
+      clearPagePreviewUrls();
+      setError(toUserFacingPdfError(loadError));
+      setStatus("error");
     }
   };
+
+  const openFilePicker = () => {
+    if (!canProcess) return;
+
+    const filePicker = (window as WindowWithFilePicker).showOpenFilePicker;
+
+    if (window.isSecureContext && filePicker) {
+      void filePicker({ excludeAcceptAllOption: false, multiple: allowMultiple })
+        .then(async (handles) => {
+          const pickedFiles = await Promise.all(handles.map((handle) => handle.getFile()));
+          await addFiles(pickedFiles);
+        })
+        .catch((pickerError: unknown) => {
+          if (pickerError instanceof DOMException && pickerError.name === "AbortError") return;
+          inputRef.current?.click();
+        });
+      return;
+    }
+
+    inputRef.current?.click();
+  };
+
+  const handleDropzoneKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    openFilePicker();
+  };
+
+  const handleDragEnter = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (canProcess) setIsDraggingFiles(true);
+  };
+
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (canProcess) event.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setIsDraggingFiles(false);
+    }
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDraggingFiles(false);
+    if (!canProcess) return;
+    void addFiles(event.dataTransfer.files);
+  };
+
+  useEffect(() => {
+    addFilesRef.current = addFiles;
+    canProcessRef.current = canProcess;
+  });
+
+  const handlePaste = (event: ClipboardEvent<HTMLDivElement>) => {
+    if (!canProcess || !event.clipboardData.files.length) return;
+    event.preventDefault();
+    void addFiles(event.clipboardData.files);
+  };
+
+  useEffect(() => {
+    const pasteHandler = (event: globalThis.ClipboardEvent) => {
+      if (!canProcessRef.current || !event.clipboardData?.files.length) return;
+      event.preventDefault();
+      void addFilesRef.current(event.clipboardData.files);
+    };
+
+    window.addEventListener("paste", pasteHandler);
+    return () => window.removeEventListener("paste", pasteHandler);
+  }, []);
 
   const removeFile = (id: string) => {
     resetGeneratedState();
@@ -279,10 +369,7 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
   const movePage = (pageIndex: number, targetIndex: number) => {
     const index = pageOrder.indexOf(pageIndex);
     if (index < 0 || targetIndex < 0 || targetIndex >= pageOrder.length) return;
-    const next = [...pageOrder];
-    next.splice(index, 1);
-    next.splice(targetIndex, 0, pageIndex);
-    setPageOrder(next);
+    setPageOrder(movePageInOrder(pageOrder, pageIndex, targetIndex));
     resetGeneratedState();
   };
 
@@ -300,17 +387,22 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
     if (tool.id === "merge-pdf" && files.length < 2) {
       throw new PdfProcessingError("Choose at least two PDF files to merge.");
     }
-    return files.map((item) => item.file);
+    const selectedFiles = files.map((item) => item.file);
+    if (tool.id === "merge-pdf") validateMergeFiles(selectedFiles);
+    else if (isImageTool) validateImageFiles(selectedFiles);
+    else validatePdfFile(selectedFiles[0]);
+    return selectedFiles;
   };
 
   const processTool = async () => {
     if (!canProcess) return;
-    setStatus("reading");
+    setStatus("validating");
     setError("");
     clearOutputs();
 
     try {
       const selectedFiles = requireFiles();
+      setStatus("reading");
       setStatus("processing");
       let generated: GeneratedOutput[] = [];
 
@@ -357,7 +449,7 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
   const inspectPdf = async () => {
     if (!files[0]) return;
     try {
-      const pdf = await PDFDocument.load(await files[0].file.arrayBuffer(), { ignoreEncryption: false });
+      const pdf = await PDFDocument.load(await readFileBytes(files[0].file), { ignoreEncryption: false });
       setPageCount(pdf.getPageCount());
     } catch (loadError) {
       setError(toUserFacingPdfError(loadError));
@@ -384,7 +476,37 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
           event.target.value = "";
         }}
       />
-      <Button type="button" variant="outline" onClick={() => inputRef.current?.click()} disabled={!canProcess}>
+      <div
+        role="button"
+        tabIndex={canProcess ? 0 : -1}
+        aria-disabled={!canProcess}
+        aria-label={`${chooseFileLabel}. Accepted formats: ${acceptedFileSummary}.`}
+        onClick={openFilePicker}
+        onKeyDown={handleDropzoneKeyDown}
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onPaste={handlePaste}
+        className={cn(
+          "group flex min-h-44 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-6 text-center transition-colors",
+          canProcess ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" : "cursor-not-allowed opacity-60",
+          isDraggingFiles ? "border-primary bg-primary/10" : "border-border bg-muted/30 hover:bg-muted/45",
+        )}
+      >
+        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+          <FilePlus2 className="h-6 w-6" aria-hidden="true" />
+        </span>
+        <span className="text-base font-semibold text-foreground">{dropzoneTitle}</span>
+        <span className="text-sm text-muted-foreground">Accepted: {acceptedFileSummary}</span>
+        <span className="max-w-sm text-xs leading-5 text-muted-foreground">
+          If Windows disables Open, drag files here or copy them in File Explorer and press Ctrl+V.
+        </span>
+        <span className="rounded-full border bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm">
+          Click, drop, paste, or press Enter
+        </span>
+      </div>
+      <Button type="button" variant="outline" onClick={openFilePicker} disabled={!canProcess}>
         {chooseFileLabel}
       </Button>
 
@@ -568,6 +690,9 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
         </Button>
         <Button type="button" variant="outline" onClick={inspectPdf} disabled={isImageTool || !files.length || !canProcess}>
           Refresh Page Info
+        </Button>
+        <Button type="button" variant="outline" onClick={resetWorkflow} disabled={!canProcess}>
+          Reset Workflow
         </Button>
         <Button type="button" variant="outline" onClick={onChooseAnother}>
           Choose Another Tool

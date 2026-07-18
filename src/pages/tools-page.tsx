@@ -1,22 +1,19 @@
 import { useMemo, useRef, useState } from "react";
 import { ToolCategoryOverview } from "@/components/tools/tool-category-overview";
 import { ToolFilterBar } from "@/components/tools/tool-filter-bar";
-import { ToolWorkflowDialog } from "@/components/tools/tool-workflow-dialog";
 import { ToolsCta } from "@/components/tools/tools-cta";
 import { ToolsDemoExplanation } from "@/components/tools/tools-demo-explanation";
 import { ToolsGrid } from "@/components/tools/tools-grid";
 import { ToolsHero } from "@/components/tools/tools-hero";
 import { tools, categoryLabels } from "@/data/tools";
 import { usePageMetadata } from "@/lib/use-page-metadata";
-import type { DocumentTool, ToolCategory } from "@/types/tool";
+import type { ToolCategory } from "@/types/tool";
 
 export function ToolsPage() {
   const catalogueRef = useRef<HTMLDivElement>(null);
   const demoRef = useRef<HTMLElement>(null);
   const [selectedCategory, setSelectedCategory] = useState<ToolCategory | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTool, setSelectedTool] = useState<DocumentTool | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   const scrollTo = (element: HTMLElement | null) => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -58,11 +55,6 @@ export function ToolsPage() {
     scrollTo(catalogueRef.current);
   };
 
-  const openTool = (tool: DocumentTool) => {
-    setSelectedTool(tool);
-    setDialogOpen(true);
-  };
-
   return (
     <>
       <ToolsHero
@@ -89,7 +81,6 @@ export function ToolsPage() {
         <div className="mt-6">
           <ToolsGrid
             tools={filteredTools}
-            onOpenTool={openTool}
             onClearSearch={() => setSearchQuery("")}
             onShowAll={showAllTools}
           />
@@ -101,13 +92,6 @@ export function ToolsPage() {
       </section>
       <ToolCategoryOverview onSelectCategory={selectOverviewCategory} />
       <ToolsCta />
-
-      <ToolWorkflowDialog
-        key={`${selectedTool?.id ?? "empty"}-${dialogOpen ? "open" : "closed"}`}
-        tool={selectedTool}
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-      />
     </>
   );
 }

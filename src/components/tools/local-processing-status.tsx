@@ -5,6 +5,7 @@ import type { ProcessingStatus } from "@/types/processing";
 
 const statusLabels: Record<ProcessingStatus, string> = {
   idle: "Ready",
+  validating: "Validating file",
   reading: "Reading file",
   processing: "Processing locally",
   "preparing-output": "Preparing download",
@@ -14,6 +15,7 @@ const statusLabels: Record<ProcessingStatus, string> = {
 
 const progressValues: Record<ProcessingStatus, number> = {
   idle: 0,
+  validating: 15,
   reading: 30,
   processing: 68,
   "preparing-output": 92,
@@ -22,7 +24,7 @@ const progressValues: Record<ProcessingStatus, number> = {
 };
 
 export function LocalProcessingStatus({ status, error }: { status: ProcessingStatus; error?: string }) {
-  const isActive = status === "reading" || status === "processing" || status === "preparing-output";
+  const isActive = status === "validating" || status === "reading" || status === "processing" || status === "preparing-output";
   const isComplete = status === "complete";
   const isError = status === "error";
 

@@ -1,16 +1,20 @@
 import { PDFDocument } from "pdf-lib";
+import { validatePdfFile } from "@/lib/pdf/file-validation";
 import { PdfProcessingError } from "@/lib/pdf/pdf-errors";
+import { readFileBytes } from "@/lib/pdf/read-file-bytes";
 
 export async function getPdfPageCount(file: File) {
-  const pdf = await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: false });
+  validatePdfFile(file);
+  const pdf = await PDFDocument.load(await readFileBytes(file), { ignoreEncryption: false });
   const pageCount = pdf.getPageCount();
-  if (pageCount < 1) throw new PdfProcessingError("This PDF does not contain any pages.");
+  if (pageCount < 1) throw new PdfProcessingError("This PDF does not contain any pages.", "EMPTY_FILE");
   return pageCount;
 }
 
 export async function extractPdfPages(file: File, pageIndexes: number[]) {
-  const source = await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: false });
-  if (!pageIndexes.length) throw new PdfProcessingError("Choose at least one page.");
+  validatePdfFile(file);
+  const source = await PDFDocument.load(await readFileBytes(file), { ignoreEncryption: false });
+  if (!pageIndexes.length) throw new PdfProcessingError("Choose at least one page.", "INVALID_PAGE_RANGE");
   const output = await PDFDocument.create();
   const pages = await output.copyPages(source, pageIndexes);
   for (const page of pages) output.addPage(page);
@@ -18,9 +22,10 @@ export async function extractPdfPages(file: File, pageIndexes: number[]) {
 }
 
 export async function splitPdfEveryPage(file: File) {
-  const source = await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: false });
+  validatePdfFile(file);
+  const source = await PDFDocument.load(await readFileBytes(file), { ignoreEncryption: false });
   const pageCount = source.getPageCount();
-  if (pageCount < 1) throw new PdfProcessingError("This PDF does not contain any pages.");
+  if (pageCount < 1) throw new PdfProcessingError("This PDF does not contain any pages.", "EMPTY_FILE");
   const outputs: Uint8Array[] = [];
 
   for (let index = 0; index < pageCount; index += 1) {
