@@ -1,12 +1,13 @@
 import { PDFDocument } from "pdf-lib";
-import { PdfProcessingError } from "@/lib/pdf/pdf-errors";
+import { validatePdfFile } from "@/lib/pdf/file-validation";
+import { readFileBytes } from "@/lib/pdf/read-file-bytes";
+import { validatePageOrder } from "@/lib/pdf/reorder-utils";
 
 export async function reorderPdfPages(file: File, pageIndexes: number[]) {
-  const source = await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: false });
+  validatePdfFile(file);
+  const source = await PDFDocument.load(await readFileBytes(file), { ignoreEncryption: false });
   const pageCount = source.getPageCount();
-  if (pageCount < 1) throw new PdfProcessingError("This PDF does not contain any pages.");
-  if (pageIndexes.length !== pageCount) throw new PdfProcessingError("The page order must include every page exactly once.");
-  if (new Set(pageIndexes).size !== pageIndexes.length) throw new PdfProcessingError("The page order contains duplicate pages.");
+  validatePageOrder(pageIndexes, pageCount);
 
   const output = await PDFDocument.create();
   const pages = await output.copyPages(source, pageIndexes);

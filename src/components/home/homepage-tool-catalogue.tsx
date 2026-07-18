@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowRight, Search, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ToolCard } from "@/components/tools/tool-card";
@@ -7,11 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { categoryLabels, tools } from "@/data/tools";
-import type { DocumentTool, ToolCategory } from "@/types/tool";
-
-const ToolWorkflowDialog = lazy(() =>
-  import("@/components/tools/tool-workflow-dialog").then((module) => ({ default: module.ToolWorkflowDialog })),
-);
+import { getFunctionalToolRoute } from "@/lib/tool-routes";
+import type { ToolCategory } from "@/types/tool";
 
 type HomepageFilter = ToolCategory | "all" | "local";
 
@@ -28,8 +25,6 @@ const homepageFilterOptions: Array<{ value: HomepageFilter; label: string }> = [
 export function HomepageToolCatalogue() {
   const [selectedFilter, setSelectedFilter] = useState<HomepageFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTool, setSelectedTool] = useState<DocumentTool | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   const filteredTools = useMemo(() => {
     const normalizedSearch = searchQuery.trim().toLowerCase();
@@ -48,11 +43,6 @@ export function HomepageToolCatalogue() {
       return filterMatch && searchMatch;
     });
   }, [searchQuery, selectedFilter]);
-
-  const openTool = (tool: DocumentTool) => {
-    setSelectedTool(tool);
-    setDialogOpen(true);
-  };
 
   const clearSearch = () => setSearchQuery("");
 
@@ -131,7 +121,11 @@ export function HomepageToolCatalogue() {
       {filteredTools.length ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredTools.map((tool) => (
-            <ToolCard key={tool.id} tool={tool} onOpen={openTool} disabled={tool.implementationStatus !== "functional"} />
+            <ToolCard
+              key={tool.id}
+              tool={tool}
+              to={getFunctionalToolRoute(tool)}
+            />
           ))}
         </div>
       ) : (
@@ -146,15 +140,6 @@ export function HomepageToolCatalogue() {
           </Link>
         </Button>
       </div>
-
-      <Suspense fallback={null}>
-        <ToolWorkflowDialog
-          key={`${selectedTool?.id ?? "empty"}-${dialogOpen ? "open" : "closed"}`}
-          tool={selectedTool}
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-        />
-      </Suspense>
     </section>
   );
 }

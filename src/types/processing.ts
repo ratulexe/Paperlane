@@ -1,4 +1,4 @@
-export type ProcessingStatus = "idle" | "reading" | "processing" | "preparing-output" | "complete" | "error";
+export type ProcessingStatus = "idle" | "validating" | "reading" | "processing" | "preparing-output" | "complete" | "error";
 
 export type GeneratedOutput = {
   filename: string;
