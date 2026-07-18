@@ -8,13 +8,20 @@ export const functionalToolRoutes = {
   "jpg-to-pdf": "/jpg-to-pdf",
   "pdf-to-jpg": "/pdf-to-jpg",
   "remove-blank-pages": "/remove-blank-pages",
+  "compress-pdf": "/compress-pdf",
   "add-watermark": "/add-watermark",
   "sign-document": "/visual-sign-pdf",
 } as const satisfies Partial<Record<DocumentTool["id"], string>>;
 
 export function getFunctionalToolRoute(tool: DocumentTool) {
-  if (tool.implementationStatus !== "functional") return undefined;
+  if (tool.implementationStatus === "coming-soon") return undefined;
   return Object.prototype.hasOwnProperty.call(functionalToolRoutes, tool.id)
     ? functionalToolRoutes[tool.id as keyof typeof functionalToolRoutes]
     : undefined;
+}
+
+export function getToolStatusLabel(tool: DocumentTool) {
+  if (tool.implementationStatus === "functional-local") return "Local processing";
+  if (tool.implementationStatus === "functional-cloud") return "Temporary cloud processing";
+  return "Coming soon";
 }

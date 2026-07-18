@@ -25,7 +25,9 @@ PDF.js is used for Reorder Pages previews, PDF to JPG/PNG export, and Remove Bla
 
 ## No-Server Boundary
 
-Paperlane does not upload selected documents or generated outputs to a Paperlane server. Static app assets, fonts and the PDF.js worker may load as normal website resources.
+Paperlane's browser-local tools do not upload selected documents or generated outputs to a Paperlane server. Static app assets, fonts and the PDF.js worker may load as normal website resources.
+
+Compress PDF is intentionally outside this boundary. It uses the separate temporary cloud-processing architecture described in `docs/CLOUD_PROCESSING_ARCHITECTURE.md` and must not be described as browser-local.
 
 ## Cleanup
 

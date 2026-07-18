@@ -32,7 +32,7 @@ export function HomepageToolCatalogue() {
     return tools.filter((tool) => {
       const filterMatch =
         selectedFilter === "all" ||
-        (selectedFilter === "local" && tool.implementationStatus === "functional") ||
+        (selectedFilter === "local" && tool.implementationStatus === "functional-local") ||
         tool.category === selectedFilter;
       const searchMatch =
         !normalizedSearch ||

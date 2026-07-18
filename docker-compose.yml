@@ -1,0 +1,55 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    environment:
+      PAPERLANE_API_PORT: 8787
+      PAPERLANE_ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      PAPERLANE_STORAGE_ROOT: /data/paperlane-cloud
+      PAPERLANE_MAX_UPLOAD_BYTES: 26214400
+      PAPERLANE_INPUT_RETENTION_MS: 1800000
+      PAPERLANE_OUTPUT_RETENTION_MS: 1800000
+      PAPERLANE_JOB_TIMEOUT_MS: 120000
+      PAPERLANE_RATE_LIMIT_WINDOW_MS: 60000
+      PAPERLANE_RATE_LIMIT_MAX_JOBS: 8
+      PAPERLANE_RATE_LIMIT_MAX_UPLOADS: 16
+      PAPERLANE_PRODUCTION: "false"
+    ports:
+      - "8787:8787"
+    volumes:
+      - paperlane-cloud-data:/data/paperlane-cloud
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    environment:
+      PAPERLANE_STORAGE_ROOT: /data/paperlane-cloud
+      PAPERLANE_JOB_TIMEOUT_MS: 120000
+      PAPERLANE_OUTPUT_RETENTION_MS: 1800000
+      PAPERLANE_WORKER_CONCURRENCY: 1
+      PAPERLANE_WORKER_POLL_MS: 1500
+      PAPERLANE_GHOSTSCRIPT_BINARY: gs
+      PAPERLANE_PRODUCTION: "false"
+    volumes:
+      - paperlane-cloud-data:/data/paperlane-cloud
+    depends_on:
+      api:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  paperlane-cloud-data:

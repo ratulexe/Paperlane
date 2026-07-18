@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { categoryLabels } from "@/data/tools";
+import { getToolStatusLabel } from "@/lib/tool-routes";
 import type { DocumentTool } from "@/types/tool";
 
 type ToolCardProps = {
@@ -14,13 +15,13 @@ type ToolCardProps = {
 export function ToolCard({ tool, to }: ToolCardProps) {
   const Icon = tool.icon;
   const visibleBadges = tool.badges.filter((badge) => badge !== "none");
-  const isFunctional = tool.implementationStatus === "functional";
-  const statusLabel = isFunctional ? "Local processing" : "Concept preview";
+  const isAvailable = tool.implementationStatus !== "coming-soon";
+  const statusLabel = getToolStatusLabel(tool);
 
   return (
     <Card
       className={
-        isFunctional
+        isAvailable
           ? "group h-full transition-colors hover:border-primary/40 hover:shadow-sm focus-within:border-primary/50"
           : "h-full border-dashed bg-card/70 shadow-none transition-colors"
       }
@@ -32,7 +33,7 @@ export function ToolCard({ tool, to }: ToolCardProps) {
           </div>
           <div className="flex flex-wrap justify-end gap-2">
             <Badge variant="secondary">{categoryLabels[tool.category]}</Badge>
-            <Badge variant={isFunctional ? "default" : "outline"}>{statusLabel}</Badge>
+            <Badge variant={isAvailable ? "default" : "outline"}>{statusLabel}</Badge>
             {visibleBadges.map((badge) => (
               <Badge key={badge} variant={badge === "ai" ? "outline" : "default"}>
                 {badge === "ai" ? "AI" : badge[0].toUpperCase() + badge.slice(1)}
@@ -42,7 +43,7 @@ export function ToolCard({ tool, to }: ToolCardProps) {
         </div>
         <h2 className="text-lg font-semibold text-foreground">{tool.name}</h2>
         <p className="mt-2 flex-1 text-sm leading-6 text-muted-foreground">{tool.shortDescription}</p>
-        {!isFunctional ? (
+        {!isAvailable ? (
           <>
             <p className="mt-4 text-sm font-medium text-muted-foreground">Planned tool — not available yet.</p>
             <Button

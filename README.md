@@ -2,7 +2,7 @@
 
 ## Overview
 
-Paperlane is a polished document productivity website for a privacy-conscious workspace concept. It now includes selected browser-local PDF tools while still presenting the broader product as a clearly labelled concept.
+Paperlane is a polished document productivity website for a privacy-conscious workspace concept. It includes selected browser-local PDF tools and a gated temporary cloud-processing foundation for Compress PDF.
 
 ## Tagline
 
@@ -26,6 +26,7 @@ Privacy-conscious document productivity SaaS concept with selected browser-local
 - Remove Blank Pages: `/remove-blank-pages`
 - Add Watermark: `/add-watermark`
 - Visual Sign PDF: `/visual-sign-pdf`
+- Compress PDF cloud foundation: `/compress-pdf`
 - Privacy
 - Contact
 
@@ -36,6 +37,7 @@ Privacy-conscious document productivity SaaS concept with selected browser-local
 - 19 document workflows
 - 9 browser-local functional tools
 - 10 clearly labelled coming-soon tools
+- Compress PDF API and worker foundation for temporary cloud processing
 - Tool search and category filters
 - Reusable workflow Dialog
 - Local PDF processing for merge, split, rotate, reorder, image-to-PDF, PDF-to-image, blank-page review/removal, text watermark and visual-signature tools
@@ -111,6 +113,12 @@ Supported limits:
 - Add Watermark: watermark text is limited to 100 characters
 - Visual Sign PDF: creates a visual electronic signature only, not a cryptographic digital signature
 
+## Temporary Cloud Processing Foundation
+
+Compress PDF has a dedicated route, API, worker and Docker setup for temporary cloud processing. It creates token-gated jobs, validates uploads, queues work, runs Ghostscript in the worker, validates output, calculates real byte-size results and supports deletion/expiration.
+
+Because Docker and Ghostscript were not available in this workspace, the Compress PDF catalogue card remains gated as Coming soon until real worker-produced output is verified.
+
 ## Concept Previews
 
 The remaining 10 tools are labelled as concept previews and appear as roadmap items with disabled Coming soon actions. They do not process documents or create output files.
@@ -119,12 +127,13 @@ The remaining 10 tools are labelled as concept previews and appear as roadmap it
 
 Paperlane is still a product concept, not a production document platform.
 
-- No backend processing
-- No file uploads to a Paperlane server
+- Compress PDF is not marked production-functional until Docker/Ghostscript end-to-end output is verified
+- Browser-local tools do not upload files to a Paperlane server
+- Compress PDF requires a separate temporary cloud-processing API and worker when enabled
 - No document storage or document history
 - No real AI functionality
 - No contact transmission
-- No backend
+- No authentication or database-backed account system
 - No authentication
 - No database
 - Browser-local processing can use significant device memory
@@ -133,6 +142,12 @@ Paperlane is still a product concept, not a production document platform.
 ## Documentation
 
 - [Local processing architecture](docs/LOCAL_PROCESSING_ARCHITECTURE.md)
+- [Cloud processing architecture](docs/CLOUD_PROCESSING_ARCHITECTURE.md)
+- [Compress PDF workflow](docs/COMPRESS_PDF_WORKFLOW.md)
+- [Retention and deletion](docs/RETENTION_AND_DELETION.md)
+- [Local cloud development](docs/LOCAL_CLOUD_DEVELOPMENT.md)
+- [Security model](docs/SECURITY_MODEL.md)
+- [Deployment guide](docs/DEPLOYMENT_GUIDE.md)
 - [Testing guide](docs/TESTING_GUIDE.md)
 - [Known limitations](docs/KNOWN_LIMITATIONS.md)
 

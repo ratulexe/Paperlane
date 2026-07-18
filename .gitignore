@@ -1,5 +1,8 @@
 node_modules
 dist
+dist-server
+.pnpm-store
+.paperlane-cloud-storage
 .env
 .env.local
 .DS_Store

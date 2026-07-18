@@ -158,12 +158,12 @@ export const faqItems: FaqItem[] = [
   {
     question: "Does Paperlane process real documents?",
     answer:
-      "Six PDF tools process selected files locally in your browser. The remaining tools are clearly labelled concept previews and do not create output files.",
+      "Nine PDF tools process selected files locally in your browser. The remaining tools are clearly labelled coming-soon workflows and do not create output files.",
   },
   {
     question: "Which document tools are represented?",
     answer:
-      "Paperlane includes 19 workflows across organisation, conversion, optimisation, security and AI-assisted categories, with six currently functional in the browser.",
+      "Paperlane includes 19 workflows across organisation, conversion, optimisation, security and AI-assisted categories, with nine currently functional in the browser.",
   },
   {
     question: "Is an account required?",

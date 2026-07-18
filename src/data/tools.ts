@@ -88,7 +88,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select PDFs", "Arrange file order", "Merge locally"],
     availableInDemo: true,
     configKind: "merge",
-    implementationStatus: "functional",
+    implementationStatus: "functional-local",
   },
   {
     id: "split-pdf",
@@ -102,7 +102,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select a PDF", "Choose split option", "Create local output"],
     availableInDemo: true,
     configKind: "split",
-    implementationStatus: "functional",
+    implementationStatus: "functional-local",
   },
   {
     id: "rotate-pdf",
@@ -116,7 +116,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select a PDF", "Choose rotation", "Rotate locally"],
     availableInDemo: true,
     configKind: "rotate",
-    implementationStatus: "functional",
+    implementationStatus: "functional-local",
   },
   {
     id: "reorder-pages",
@@ -130,7 +130,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select a PDF", "Adjust page order", "Create local output"],
     availableInDemo: true,
     configKind: "reorder",
-    implementationStatus: "functional",
+    implementationStatus: "functional-local",
   },
   {
     id: "pdf-to-word",
@@ -144,7 +144,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select a PDF", "Review output format", "Simulate conversion workflow"],
     availableInDemo: true,
     configKind: "output-format",
-    implementationStatus: "concept",
+    implementationStatus: "coming-soon",
   },
   {
     id: "word-to-pdf",
@@ -158,7 +158,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select a Word document", "Review PDF output", "Simulate conversion workflow"],
     availableInDemo: true,
     configKind: "output-format",
-    implementationStatus: "concept",
+    implementationStatus: "coming-soon",
   },
   {
     id: "jpg-to-pdf",
@@ -172,7 +172,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select images", "Review PDF output", "Create local PDF"],
     availableInDemo: true,
     configKind: "output-format",
-    implementationStatus: "functional",
+    implementationStatus: "functional-local",
   },
   {
     id: "pdf-to-jpg",
@@ -186,21 +186,21 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select a PDF", "Choose image output", "Export local images"],
     availableInDemo: true,
     configKind: "output-format",
-    implementationStatus: "functional",
+    implementationStatus: "functional-local",
   },
   {
     id: "compress-pdf",
     name: "Compress PDF",
-    shortDescription: "Demonstrate a workflow for reducing document size.",
-    detailedDescription: "Preview how compression preferences could be presented without claiming real file savings.",
+    shortDescription: "Reduce PDF size through a gated temporary cloud-processing workflow.",
+    detailedDescription: "Compress PDF is wired to a temporary cloud API and worker foundation, but remains gated until worker output is verified.",
     category: "optimise",
     icon: Archive,
     acceptedFileTypes: [pdfFileType],
     badges: ["popular"],
-    workflowSteps: ["Select a PDF", "Choose compression preference", "Simulate optimisation workflow"],
+    workflowSteps: ["Select a PDF", "Choose compression preset", "Run temporary cloud processing"],
     availableInDemo: true,
     configKind: "compress",
-    implementationStatus: "concept",
+    implementationStatus: "coming-soon",
   },
   {
     id: "remove-blank-pages",
@@ -214,7 +214,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select a PDF", "Review suggestions", "Create local output"],
     availableInDemo: true,
     configKind: "blank-pages",
-    implementationStatus: "functional",
+    implementationStatus: "functional-local",
   },
   {
     id: "repair-pdf",
@@ -228,7 +228,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select a PDF", "Review repair note", "Simulate repair workflow"],
     availableInDemo: true,
     configKind: "repair",
-    implementationStatus: "concept",
+    implementationStatus: "coming-soon",
   },
   {
     id: "ocr-scanner",
@@ -242,7 +242,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select a scan", "Choose language", "Simulate OCR workflow"],
     availableInDemo: true,
     configKind: "ocr",
-    implementationStatus: "concept",
+    implementationStatus: "coming-soon",
   },
   {
     id: "ai-summary",
@@ -256,7 +256,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select a document", "Choose summary length", "Simulate summary workflow"],
     availableInDemo: true,
     configKind: "summary",
-    implementationStatus: "concept",
+    implementationStatus: "coming-soon",
   },
   {
     id: "ai-translation",
@@ -270,7 +270,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select a document", "Choose languages", "Simulate translation workflow"],
     availableInDemo: true,
     configKind: "translation",
-    implementationStatus: "concept",
+    implementationStatus: "coming-soon",
   },
   {
     id: "key-information-extractor",
@@ -284,7 +284,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select a document", "Choose detail categories", "Simulate extraction workflow"],
     availableInDemo: true,
     configKind: "extract",
-    implementationStatus: "concept",
+    implementationStatus: "coming-soon",
   },
   {
     id: "protect-pdf",
@@ -298,7 +298,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select a PDF", "Enter demo password", "Simulate protection workflow"],
     availableInDemo: true,
     configKind: "protect",
-    implementationStatus: "concept",
+    implementationStatus: "coming-soon",
   },
   {
     id: "unlock-pdf",
@@ -312,7 +312,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select a PDF", "Enter demo password", "Simulate unlock workflow"],
     availableInDemo: true,
     configKind: "unlock",
-    implementationStatus: "concept",
+    implementationStatus: "coming-soon",
   },
   {
     id: "add-watermark",
@@ -326,7 +326,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select a PDF", "Choose watermark placement", "Create local output"],
     availableInDemo: true,
     configKind: "watermark",
-    implementationStatus: "functional",
+    implementationStatus: "functional-local",
   },
   {
     id: "sign-document",
@@ -340,7 +340,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select a PDF", "Create signature", "Place visual signature"],
     availableInDemo: true,
     configKind: "sign",
-    implementationStatus: "functional",
+    implementationStatus: "functional-local",
   },
 ];
 

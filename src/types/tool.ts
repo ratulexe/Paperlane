@@ -3,7 +3,7 @@ import type { LucideIcon } from "lucide-react";
 export type ToolCategory = "organise" | "convert" | "optimise" | "ai" | "security";
 
 export type ToolStatusBadge = "popular" | "ai" | "new" | "none";
-export type ToolImplementationStatus = "functional" | "concept";
+export type ToolImplementationStatus = "functional-local" | "functional-cloud" | "coming-soon";
 
 export type AcceptedFileType = {
   label: string;

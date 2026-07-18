@@ -64,7 +64,13 @@ export const transparencyRows = [
     dataType: "File content",
     why: "Required only for the chosen document action.",
     approach: "Clearly communicate processing location and retention behaviour.",
-    status: "Functional tools read selected file bytes locally in browser memory. Paperlane does not send those files to a server.",
+    status: "Browser-local tools read selected file bytes locally. The Compress PDF cloud foundation uploads only after explicit consent when the API and worker are running.",
+  },
+  {
+    dataType: "Cloud job metadata",
+    why: "Required to queue, process, expire and delete temporary cloud-processing jobs.",
+    approach: "Use random job IDs, token-gated access, timestamps, file sizes, preset, state, duration, public error category and deletion state.",
+    status: "Implemented for the Compress PDF development foundation; no account history is created.",
   },
   {
     dataType: "Account information",
@@ -103,14 +109,14 @@ export const aiCautions: PrivacyItem[] = [
 
 export const privacyFaqItems = [
   {
-    question: "Does Paperlane currently upload selected files?",
+    question: "Does Paperlane upload selected files?",
     answer:
-      "No. Functional tools process files locally in browser memory, and concept previews use selected files only to display file details.",
+      "Browser-local tools do not upload selected files. The Compress PDF cloud foundation uploads one PDF only after explicit consent when the separate API and worker services are running.",
   },
   {
     question: "Does Paperlane store selected documents?",
     answer:
-      "No. Paperlane does not include document storage, user document histories, localStorage, sessionStorage or IndexedDB persistence.",
+      "Paperlane does not include accounts or document history. Temporary cloud-processing inputs and outputs use configured expiration and explicit deletion controls; operational metadata may remain separately for job state and cleanup.",
   },
   {
     question: "Is Paperlane end-to-end encrypted?",

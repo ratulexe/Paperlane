@@ -3,8 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 const capabilityItems = [
-  { label: "6 browser-local tools", icon: CheckCircle2 },
-  { label: "13 concept previews", icon: Sparkles },
+  { label: "9 browser-local tools", icon: CheckCircle2 },
+  { label: "10 coming-soon tools", icon: Sparkles },
   { label: "No server upload for local tools", icon: ShieldCheck },
 ];
 

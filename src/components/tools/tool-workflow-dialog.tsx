@@ -336,7 +336,7 @@ export function ToolWorkflowDialog({ tool, open, onOpenChange }: ToolWorkflowDia
   if (!tool) return null;
   const Icon = tool.icon;
   const badges = tool.badges.filter((badge) => badge !== "none");
-  const isFunctional = tool.implementationStatus === "functional";
+  const isFunctional = tool.implementationStatus === "functional-local";
 
   const updateConfig = (key: string, value: DemoOptionValue) => {
     setConfig((current) => ({ ...current, [key]: value }));
@@ -365,7 +365,7 @@ export function ToolWorkflowDialog({ tool, open, onOpenChange }: ToolWorkflowDia
           timerRef.current = null;
           setIsRunning(false);
           setCompleted(true);
-          setProgressStatus("Concept preview completed. No document processing or output file was created.");
+          setProgressStatus("Coming-soon preview completed. No document processing or output file was created.");
         }
         return next;
       });
@@ -476,7 +476,7 @@ export function ToolWorkflowDialog({ tool, open, onOpenChange }: ToolWorkflowDia
                       </div>
                       <div>
                         <dt className="text-muted-foreground">Notice</dt>
-                        <dd className="font-medium">Concept preview</dd>
+                        <dd className="font-medium">Coming soon</dd>
                       </div>
                     </dl>
                     <div className="rounded-lg border bg-muted/30 p-3">

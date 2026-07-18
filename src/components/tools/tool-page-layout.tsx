@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { categoryLabels, tools } from "@/data/tools";
 import type { ToolPageSpec } from "@/data/tool-pages";
-import { getFunctionalToolRoute } from "@/lib/tool-routes";
+import { getFunctionalToolRoute, getToolStatusLabel } from "@/lib/tool-routes";
 import { usePageMetadata } from "@/lib/use-page-metadata";
 import type { DocumentTool } from "@/types/tool";
 
@@ -125,9 +125,7 @@ export function ToolPageLayout({ spec, tool }: ToolPageLayoutProps) {
                         </span>
                         <div>
                           <h2 className="text-sm font-semibold">{relatedTool.name}</h2>
-                          <p className="text-xs text-muted-foreground">
-                            {relatedTool.implementationStatus === "functional" ? "Local processing" : "Concept preview"}
-                          </p>
+                          <p className="text-xs text-muted-foreground">{getToolStatusLabel(relatedTool)}</p>
                         </div>
                       </div>
                       {route ? (
