@@ -8,7 +8,7 @@ import { PublicApiError, publicMessage } from "../shared/errors.js";
 import { createId, createToken, hashToken, tokenMatches } from "../shared/ids.js";
 import { parseCompressionRequest, sanitizeFilename, validatePdfReadable, validatePdfUpload, validateTargetBelowOriginal } from "../shared/validation.js";
 import type { CloudJobRecord, CreateCompressionJobRequest } from "../shared/types.js";
-import { cleanupJob, shouldDeleteCompletedOutput, shouldExpireJob } from "../shared/cleanup.js";
+import { cleanupJob, cleanupProcessingQueueEntries, shouldDeleteCompletedOutput, shouldExpireJob } from "../shared/cleanup.js";
 import { getClientIp, publicJob, readBodyWithLimit, readJson, requestId, sendError, sendJson } from "./http-utils.js";
 
 export type ApiDependencies = {
@@ -48,13 +48,14 @@ function applyCors(request: http.IncomingMessage, response: http.ServerResponse,
   response.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
 }
 
-async function runCleanup(store: FileJobStore, storage: FileStorage) {
+async function runCleanup(store: FileJobStore, storage: FileStorage, queue: FileJobQueue) {
   const jobs = await store.list();
   await Promise.all(
     jobs
       .filter((job) => shouldExpireJob(job) || shouldDeleteCompletedOutput(job))
       .map((job) => cleanupJob(job, store, storage)),
   );
+  await cleanupProcessingQueueEntries(queue, store, storage);
 }
 
 export async function createApiServer(dependencies: ApiDependencies = {}) {
@@ -194,12 +195,14 @@ export async function createApiServer(dependencies: ApiDependencies = {}) {
       }
 
       if (request.method === "DELETE" && !action) {
+        const isInFlight = job.state === "processing" || job.state === "validating" || job.state === "validating-output";
         const updated = await store.update(job.jobId, (current) => ({
           ...current,
-          state: current.state === "processing" ? current.state : "cancelled",
+          state: isInFlight ? current.state : "cancelled",
           cancellationRequested: true,
+          errorCategory: undefined,
         }));
-        await cleanupJob(updated ?? job, store, storage);
+        if (!isInFlight) await cleanupJob(updated ?? job, store, storage);
         sendJson(response, 200, { job: publicJob((await store.read(job.jobId)) ?? job) });
         return;
       }
@@ -211,7 +214,7 @@ export async function createApiServer(dependencies: ApiDependencies = {}) {
   });
 
   const cleanupTimer = setInterval(() => {
-    void runCleanup(store, storage).catch(() => undefined);
+    void runCleanup(store, storage, queue).catch(() => undefined);
   }, 60_000);
   server.on("close", () => clearInterval(cleanupTimer));
 

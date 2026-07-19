@@ -20,7 +20,8 @@ export type CloudJobState =
   | "complete"
   | "failed"
   | "expired"
-  | "cancelled";
+  | "cancelled"
+  | "deleted";
 
 export type PublicErrorCategory =
   | "INVALID_FILE_TYPE"
@@ -41,6 +42,7 @@ export type PublicErrorCategory =
   | "DOWNLOAD_EXPIRED"
   | "UNAUTHORISED_JOB"
   | "INVALID_STATE"
+  | "CANCELLED"
   | "INVALID_TARGET_SIZE"
   | "TARGET_TOO_SMALL"
   | "TARGET_TOO_LARGE"

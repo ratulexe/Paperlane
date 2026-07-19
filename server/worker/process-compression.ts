@@ -26,7 +26,15 @@ export async function processCompressionJob(jobId: string, store: FileJobStore, 
     return;
   }
   if (job.cancellationRequested) {
-    await store.update(jobId, (current) => ({ ...current, state: "cancelled" }));
+    await storage.deleteInput(job.inputKey);
+    await storage.deleteOutput(job.outputKey);
+    await store.update(jobId, (current) => ({
+      ...current,
+      state: "cancelled",
+      subStage: undefined,
+      errorCategory: undefined,
+      deletion: { ...current.deletion, inputDeleted: true, outputDeleted: true, localFilesDeleted: true },
+    }));
     return;
   }
 
@@ -150,11 +158,23 @@ export async function processCompressionJob(jobId: string, store: FileJobStore, 
     }));
   } catch (error) {
     const category = error instanceof PublicApiError ? error.category : "COMPRESSION_FAILED";
+    const latest = (await store.read(jobId)) ?? job;
+    const cancelled = latest.cancellationRequested || category === "CANCELLED";
+    if (cancelled) {
+      await storage.deleteInput(latest.inputKey);
+      await storage.deleteOutput(latest.outputKey);
+    }
     await store.update(jobId, (current) => ({
       ...current,
-      state: current.cancellationRequested ? "cancelled" : "failed",
-      errorCategory: category,
-      deletion: { ...current.deletion, localFilesDeleted: true },
+      state: cancelled ? "cancelled" : "failed",
+      subStage: undefined,
+      errorCategory: cancelled ? undefined : category,
+      deletion: {
+        ...current.deletion,
+        inputDeleted: cancelled ? true : current.deletion.inputDeleted,
+        outputDeleted: cancelled ? true : current.deletion.outputDeleted,
+        localFilesDeleted: true,
+      },
     }));
   } finally {
     await fs.rm(tempRoot, { recursive: true, force: true });

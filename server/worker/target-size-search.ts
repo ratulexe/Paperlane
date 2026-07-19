@@ -106,7 +106,7 @@ async function validateCandidate(filePath: string, originalPageCount: number) {
 
 async function assertNotCancelled(cancellationCheck: TargetSearchInput["cancellationCheck"]) {
   if (await cancellationCheck()) {
-    throw new PublicApiError("INVALID_STATE", "Cancellation requested.", 409);
+    throw new PublicApiError("CANCELLED", "Cancellation requested.", 409);
   }
 }
 
@@ -147,7 +147,7 @@ export async function runTargetSizeSearch(input: TargetSearchInput): Promise<Tar
         pageCountMismatchCount += 1;
         continue;
       }
-      if (error instanceof PublicApiError && ["PROCESSING_TIMEOUT", "INVALID_STATE"].includes(error.category)) throw error;
+      if (error instanceof PublicApiError && ["PROCESSING_TIMEOUT", "CANCELLED"].includes(error.category)) throw error;
       candidates.push({ settings, outputPath, outputBytes: 0, valid: false });
     }
   }

@@ -90,7 +90,7 @@ export function runGhostscriptWithArgs(options: {
       void options.shouldCancel?.().then((cancel) => {
         if (cancel && !settled) {
           child.kill("SIGTERM");
-          finish(new PublicApiError("INVALID_STATE", "Cancellation requested.", 409));
+          finish(new PublicApiError("CANCELLED", "Cancellation requested.", 409));
         }
       });
     }, 500);

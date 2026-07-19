@@ -1,4 +1,5 @@
 import { loadServerConfig } from "../shared/config.js";
+import { recoverProcessingQueueOnStartup } from "../shared/cleanup.js";
 import { FileJobQueue } from "../shared/file-queue.js";
 import { FileJobStore } from "../shared/job-store.js";
 import { FileStorage } from "../shared/storage.js";
@@ -11,6 +12,7 @@ const store = new FileJobStore(storage.jobsDir);
 await store.ensureReady();
 const queue = new FileJobQueue(storage.queueDir, storage.processingQueueDir);
 await queue.ensureReady();
+await recoverProcessingQueueOnStartup(queue, store, storage);
 
 let shuttingDown = false;
 process.on("SIGTERM", () => {

@@ -56,12 +56,13 @@ function stageLabel(job?: PublicCloudJob, uploading = false) {
     failed: "Failed",
     expired: "Expired",
     cancelled: "Cancelled",
+    deleted: "Deleted",
   };
   return labels[job.state];
 }
 
 function isActiveJob(job?: PublicCloudJob) {
-  return Boolean(job && !["complete", "failed", "expired", "cancelled"].includes(job.state));
+  return Boolean(job && !["complete", "failed", "expired", "cancelled", "deleted"].includes(job.state));
 }
 
 function estimateTotalSeconds(fileBytes?: number, mode: CompressionRequest["mode"] = "preset") {
@@ -79,7 +80,7 @@ function compressionProgress(job: PublicCloudJob | undefined, uploading: boolean
   const elapsed = elapsedSeconds(startedAt, now);
   if (uploading) return Math.min(22, 10 + elapsed * 3);
   if (!job) return 0;
-  if (job.state === "failed" || job.state === "cancelled" || job.state === "expired") return 0;
+  if (job.state === "failed" || job.state === "cancelled" || job.state === "expired" || job.state === "deleted") return 0;
   if (job.state === "complete") return 100;
 
   const timeBasedProgress = Math.min(91, 44 + Math.round((elapsed / estimatedTotalSeconds) * 47));
@@ -103,6 +104,7 @@ function compressionProgress(job: PublicCloudJob | undefined, uploading: boolean
     failed: 0,
     expired: 0,
     cancelled: 0,
+    deleted: 0,
   };
   return values[job.state];
 }
@@ -200,7 +202,7 @@ export function CompressPdfPage() {
     if (!targetBytes || targetError) return undefined;
     return { mode: "target-size", targetBytes };
   }, [compressionMode, preset, targetBytes, targetError]);
-  const canStart = Boolean(file && consent && compressionRequest && !isUploading && (!job || ["failed", "cancelled", "expired"].includes(job.state)));
+  const canStart = Boolean(file && consent && compressionRequest && !isUploading && (!job || ["failed", "cancelled", "expired", "deleted"].includes(job.state)));
   const estimatedTotal = estimateTotalSeconds(file?.size, compressionMode);
   const progressValue = compressionProgress(job, isUploading, progressNow, workflowStartedAt, estimatedTotal);
   const timeLabel = estimatedTimeLabel(job, isUploading, progressNow, workflowStartedAt, estimatedTotal);
@@ -506,7 +508,7 @@ export function CompressPdfPage() {
             {showProgress ? (
               <div className="mt-3 space-y-2">
                 <Progress value={progressValue} aria-label={`Estimated compression progress: ${progressValue}%`} />
-                {job?.state !== "complete" && job?.state !== "failed" && job?.state !== "cancelled" && job?.state !== "expired" ? (
+                {job?.state !== "complete" && job?.state !== "failed" && job?.state !== "cancelled" && job?.state !== "expired" && job?.state !== "deleted" ? (
                   <div className="space-y-1 text-xs leading-5 text-muted-foreground">
                     {timeLabel ? <p className="font-medium text-foreground">{timeLabel}</p> : null}
                     <p>Estimated progress. Larger or image-heavy PDFs can take longer, so keep this page open until the download is ready.</p>
@@ -546,7 +548,7 @@ export function CompressPdfPage() {
             <Button type="button" onClick={startCompression} disabled={!canStart || Boolean(selectedError) || Boolean(targetError) || isReady === false}>
               Compress PDF
             </Button>
-            <Button type="button" variant="outline" onClick={deleteNow} disabled={!job || !jobToken || job.state === "cancelled" || job.state === "expired"}>
+            <Button type="button" variant="outline" onClick={deleteNow} disabled={!job || !jobToken || job.state === "cancelled" || job.state === "expired" || job.state === "deleted"}>
               <Trash2 className="h-4 w-4" aria-hidden="true" />Delete now
             </Button>
             <Button
