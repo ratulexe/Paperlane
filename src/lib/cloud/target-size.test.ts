@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { targetBytesFromInput, validateTargetSize } from "./target-size";
+import { recommendTargetSize, targetBytesFromInput, validateTargetSize } from "./target-size";
 
 describe("target size helpers", () => {
   it("converts KB and MB to bytes", () => {
@@ -18,5 +18,11 @@ describe("target size helpers", () => {
     expect(validateTargetSize({ value: "21", unit: "MB", maxUploadBytes: 25 * 1024 * 1024 })).toBe("Choose a target below 20 MB.");
     expect(validateTargetSize({ value: "200", unit: "KB", originalBytes: 150 * 1024, maxUploadBytes: 25 * 1024 * 1024 })).toContain("already below");
     expect(validateTargetSize({ value: "200", unit: "KB", originalBytes: 300 * 1024, maxUploadBytes: 25 * 1024 * 1024 })).toBe("");
+  });
+
+  it("recommends a whole-KB target below the original size", () => {
+    expect(recommendTargetSize(1200 * 1024)).toEqual({ bytes: 420 * 1024, value: "420", unit: "KB" });
+    expect(recommendTargetSize(80 * 1024)).toEqual({ bytes: 50 * 1024, value: "50", unit: "KB" });
+    expect(recommendTargetSize(40 * 1024)).toBeUndefined();
   });
 });

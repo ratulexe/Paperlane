@@ -2,7 +2,7 @@
 
 ## Overview
 
-Paperlane is a polished document productivity website for a privacy-conscious workspace concept. It includes selected browser-local PDF tools and a gated temporary cloud-processing foundation for Compress PDF, including preset compression and target maximum size attempts.
+Paperlane is a polished document productivity website for a privacy-conscious workspace concept. It includes selected browser-local PDF tools and an available temporary cloud-processing workflow for Compress PDF, including preset compression and target maximum size attempts.
 
 ## Tagline
 
@@ -36,7 +36,8 @@ Privacy-conscious document productivity SaaS concept with selected browser-local
 - Actual shadcn/ui components
 - 19 document workflows
 - 9 browser-local functional tools
-- 10 clearly labelled coming-soon tools
+- 1 temporary cloud-processing Compress PDF tool
+- 9 clearly labelled coming-soon tools
 - Compress PDF API and worker foundation for temporary cloud processing with preset and target-size modes
 - Tool search and category filters
 - Reusable workflow Dialog
@@ -119,11 +120,11 @@ Compress PDF has a dedicated route, API, worker and Docker setup for temporary c
 
 Preset mode offers high quality, balanced and smallest-size options. Target-size mode lets the user enter a maximum size goal; the worker tries several controlled Ghostscript settings, selects the largest valid output at or below the target when possible, and otherwise returns the smallest valid output with a clear target-not-reached result.
 
-The Compress PDF catalogue card remains gated as Coming soon until the cloud-processing service is intentionally enabled for the target environment.
+The Compress PDF catalogue card is available as a temporary cloud-processing tool when the API and worker service are running.
 
 ## Concept Previews
 
-The remaining 10 tools are labelled as concept previews and appear as roadmap items with disabled Coming soon actions. They do not process documents or create output files.
+The remaining 9 tools are labelled as concept previews and appear as roadmap items with disabled Coming soon actions. They do not process documents or create output files.
 
 ## Important Limitations
 

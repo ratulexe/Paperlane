@@ -21,8 +21,8 @@ export function ToolsHero({ onBrowseTools, onShowDemo }: ToolsHeroProps) {
           Everything your documents need, in one lane.
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-          Explore a consistent collection of document workflows, including nine browser-local tools and clearly
-          labelled coming-soon workflows.
+          Explore a consistent collection of document workflows, including nine browser-local tools, one temporary
+          cloud-processing tool and clearly labelled coming-soon workflows.
         </p>
         <div className="mt-7 flex flex-wrap gap-3">
           <Button onClick={onBrowseTools}>
@@ -46,7 +46,7 @@ export function ToolsHero({ onBrowseTools, onShowDemo }: ToolsHeroProps) {
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-foreground">19 document workflows</p>
-              <p className="text-sm text-muted-foreground">9 local tools, 10 coming-soon tools</p>
+              <p className="text-sm text-muted-foreground">10 available tools, 9 coming-soon tools</p>
             </div>
             <Badge>{tools.length} tools</Badge>
           </div>

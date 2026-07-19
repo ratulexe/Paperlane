@@ -12,6 +12,29 @@ export function targetBytesFromInput(value: string, unit: TargetSizeUnit) {
   return numericValue * (unit === "KB" ? 1024 : 1024 * 1024);
 }
 
+export function recommendTargetSize(originalBytes?: number) {
+  if (!originalBytes || originalBytes <= targetSizeLimits.minimumBytes) return undefined;
+
+  const ratio =
+    originalBytes >= 10 * 1024 * 1024
+      ? 0.25
+      : originalBytes >= 5 * 1024 * 1024
+        ? 0.3
+        : originalBytes >= 1024 * 1024
+          ? 0.35
+          : 0.55;
+  const roundedKilobytes = Math.max(50, Math.round((originalBytes * ratio) / 1024));
+  const maximumKilobytesBelowOriginal = Math.max(1, Math.floor((originalBytes - 1024) / 1024));
+  const value = Math.min(roundedKilobytes, maximumKilobytesBelowOriginal);
+  if (value < 50) return undefined;
+
+  return {
+    bytes: value * 1024,
+    value: String(value),
+    unit: "KB" as const,
+  };
+}
+
 export function validateTargetSize(input: {
   value: string;
   unit: TargetSizeUnit;

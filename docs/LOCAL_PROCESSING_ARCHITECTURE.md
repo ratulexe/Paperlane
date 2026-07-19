@@ -1,6 +1,6 @@
 # Paperlane Local Processing Architecture
 
-Paperlane's nine functional tools run in the browser. Selected files are read with `File.arrayBuffer()`, processed with `pdf-lib` and PDF.js where needed, converted into `Blob` output, exposed through `URL.createObjectURL()`, and downloaded with a temporary anchor element.
+Paperlane's nine browser-local functional tools run in the browser. Selected files are read with `File.arrayBuffer()`, processed with `pdf-lib` and PDF.js where needed, converted into `Blob` output, exposed through `URL.createObjectURL()`, and downloaded with a temporary anchor element.
 
 ## Flow
 

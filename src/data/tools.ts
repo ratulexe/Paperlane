@@ -191,7 +191,7 @@ export const tools: DocumentTool[] = [
   {
     id: "compress-pdf",
     name: "Compress PDF",
-    shortDescription: "Reduce PDF size through a gated temporary cloud-processing workflow.",
+    shortDescription: "Reduce PDF size through a temporary cloud-processing workflow.",
     detailedDescription: "Compress PDF is wired to a temporary cloud API and worker foundation with preset and target-size compression modes.",
     category: "optimise",
     icon: Archive,
@@ -200,7 +200,7 @@ export const tools: DocumentTool[] = [
     workflowSteps: ["Select a PDF", "Choose compression preset", "Run temporary cloud processing"],
     availableInDemo: true,
     configKind: "compress",
-    implementationStatus: "coming-soon",
+    implementationStatus: "functional-cloud",
   },
   {
     id: "remove-blank-pages",

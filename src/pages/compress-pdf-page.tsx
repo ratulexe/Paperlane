@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, Download, Trash2, UploadCloud } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
+import { ArrowLeft, ArrowRight, Download, FilePlus2, Trash2, UploadCloud } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getToolById } from "@/data/tool-pages";
 import { tools } from "@/data/tools";
@@ -22,7 +23,7 @@ import {
   startCompressionJob,
   uploadCompressionInput,
 } from "@/lib/cloud/compression-api";
-import { targetBytesFromInput, validateTargetSize, type TargetSizeUnit } from "@/lib/cloud/target-size";
+import { recommendTargetSize, targetBytesFromInput, validateTargetSize, type TargetSizeUnit } from "@/lib/cloud/target-size";
 import { formatFileSize } from "@/lib/file-demo";
 import { usePageMetadata } from "@/lib/use-page-metadata";
 import type { CompressionPreset, CompressionRequest, PublicCloudJob } from "@/types/cloud-processing";
@@ -33,6 +34,9 @@ const retentionCopy = "30 minutes for uploaded inputs that are not processed, an
 function stageLabel(job?: PublicCloudJob, uploading = false) {
   if (uploading) return "Uploading";
   if (!job) return "Ready";
+  if (job.state === "complete" && job.compression?.targetBytes && job.compression.targetMet === false) {
+    return "Complete - target not reached";
+  }
   if (job.subStage === "generating-candidate" && job.attemptsUsed && job.maximumAttempts) {
     return `Testing compression setting ${job.attemptsUsed} of ${job.maximumAttempts}`;
   }
@@ -47,7 +51,7 @@ function stageLabel(job?: PublicCloudJob, uploading = false) {
     validating: "Validating",
     processing: "Compressing",
     "validating-output": "Checking output",
-    complete: "Ready",
+    complete: "Complete",
     failed: "Failed",
     expired: "Expired",
     cancelled: "Cancelled",
@@ -89,6 +93,8 @@ export function CompressPdfPage() {
   const [error, setError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isReady, setIsReady] = useState<boolean | undefined>();
+  const [isDraggingUpload, setIsDraggingUpload] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   usePageMetadata({
     title: "Compress PDF Online | Paperlane",
@@ -120,6 +126,7 @@ export function CompressPdfPage() {
   }, [job, jobToken]);
 
   const selectedError = useMemo(() => (file ? validatePdf(file) : ""), [file]);
+  const recommendedTarget = useMemo(() => recommendTargetSize(file?.size), [file?.size]);
   const targetBytes = useMemo(() => targetBytesFromInput(targetValue, targetUnit), [targetUnit, targetValue]);
   const targetError = useMemo(() => {
     if (compressionMode !== "target-size") return "";
@@ -131,6 +138,30 @@ export function CompressPdfPage() {
     return { mode: "target-size", targetBytes };
   }, [compressionMode, preset, targetBytes, targetError]);
   const canStart = Boolean(file && consent && compressionRequest && !isUploading && (!job || ["failed", "cancelled", "expired"].includes(job.state)));
+
+  function selectFile(nextFile?: File) {
+    setFile(nextFile ?? null);
+    setJob(undefined);
+    setJobToken("");
+    setError("");
+  }
+
+  function openFilePicker() {
+    fileInputRef.current?.click();
+  }
+
+  function handleUploadKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openFilePicker();
+    }
+  }
+
+  function handleUploadDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDraggingUpload(false);
+    selectFile(event.dataTransfer.files[0]);
+  }
 
   async function startCompression() {
     if (!file) return;
@@ -237,29 +268,84 @@ export function CompressPdfPage() {
           <div className="grid gap-2">
             <Label htmlFor="compress-file">Select one PDF</Label>
             <Input
+              ref={fileInputRef}
               id="compress-file"
               type="file"
+              className="sr-only"
               accept=".pdf,application/pdf"
               onChange={(event) => {
-                setFile(event.target.files?.[0] ?? null);
-                setJob(undefined);
-                setJobToken("");
-                setError("");
+                selectFile(event.target.files?.[0]);
+                event.target.value = "";
               }}
             />
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label="Upload one PDF. Click, drop, or press Enter to choose a PDF."
+              onClick={openFilePicker}
+              onKeyDown={handleUploadKeyDown}
+              onDragEnter={(event) => {
+                event.preventDefault();
+                setIsDraggingUpload(true);
+              }}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setIsDraggingUpload(true);
+              }}
+              onDragLeave={() => setIsDraggingUpload(false)}
+              onDrop={handleUploadDrop}
+              className={`flex min-h-48 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed p-6 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                isDraggingUpload ? "border-primary bg-primary/10 shadow-sm" : "border-primary/30 bg-gradient-to-b from-secondary/50 to-background hover:border-primary/50 hover:bg-secondary/45"
+              }`}
+            >
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+                <UploadCloud className="h-7 w-7" aria-hidden="true" />
+              </span>
+              <strong className="mt-4 text-lg font-semibold text-foreground">Upload your PDF here</strong>
+              <span className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
+                Click this area or drag one PDF from your device.
+              </span>
+              <span className="mt-1 text-xs text-muted-foreground">Accepted: .pdf</span>
+              <span className="mt-4 inline-flex items-center gap-2 rounded-full border bg-background px-4 py-2 text-sm font-semibold text-foreground shadow-sm">
+                <FilePlus2 className="h-4 w-4 text-primary" aria-hidden="true" />
+                Select PDF
+              </span>
+            </div>
+            <Button type="button" variant="outline" onClick={openFilePicker}>
+              Browse from device
+            </Button>
             {file ? <p className="text-sm text-muted-foreground">{file.name} · {formatFileSize(file.size)}</p> : null}
             {selectedError ? <p className="text-sm text-destructive">{selectedError}</p> : null}
           </div>
 
-          <div className="grid gap-2">
+          <div className="grid gap-3">
             <Label>Compression mode</Label>
-            <Select value={compressionMode} onValueChange={(value) => setCompressionMode(value as CompressionRequest["mode"])}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="preset">Recommended preset</SelectItem>
-                <SelectItem value="target-size">Maximum target size</SelectItem>
-              </SelectContent>
-            </Select>
+            <RadioGroup
+              value={compressionMode}
+              onValueChange={(value) => setCompressionMode(value as CompressionRequest["mode"])}
+              className="grid gap-3 sm:grid-cols-2"
+            >
+              <Label
+                htmlFor="compression-mode-preset"
+                className="flex cursor-pointer items-start gap-3 rounded-xl border bg-background p-4 transition-colors hover:bg-muted/30 has-[[data-state=checked]]:border-primary/60 has-[[data-state=checked]]:bg-secondary/45"
+              >
+                <RadioGroupItem id="compression-mode-preset" value="preset" className="mt-1" />
+                <span className="grid gap-1">
+                  <span className="font-semibold text-foreground">Let Paperlane choose</span>
+                  <span className="text-sm leading-6 text-muted-foreground">Best for quick compression with a balanced result.</span>
+                </span>
+              </Label>
+              <Label
+                htmlFor="compression-mode-target"
+                className="flex cursor-pointer items-start gap-3 rounded-xl border bg-background p-4 transition-colors hover:bg-muted/30 has-[[data-state=checked]]:border-primary/60 has-[[data-state=checked]]:bg-secondary/45"
+              >
+                <RadioGroupItem id="compression-mode-target" value="target-size" className="mt-1" />
+                <span className="grid gap-1">
+                  <span className="font-semibold text-foreground">Choose a smaller file size</span>
+                  <span className="text-sm leading-6 text-muted-foreground">Best when you need the PDF near a specific upload limit.</span>
+                </span>
+              </Label>
+            </RadioGroup>
           </div>
 
           {compressionMode === "preset" ? (
@@ -278,7 +364,7 @@ export function CompressPdfPage() {
             <div className="space-y-3">
               <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_120px]">
                 <div className="grid gap-2">
-                  <Label htmlFor="target-size-value">Target maximum size</Label>
+                  <Label htmlFor="target-size-value">Desired file size</Label>
                   <Input
                     id="target-size-value"
                     inputMode="numeric"
@@ -306,6 +392,29 @@ export function CompressPdfPage() {
               <p className="text-sm leading-6 text-muted-foreground">
                 Very small targets may cause substantial image-quality loss and may be impossible for long, text-heavy or already optimised PDFs.
               </p>
+              {file && recommendedTarget && !job?.compression ? (
+                <div className="flex flex-col gap-3 rounded-xl border border-primary/20 bg-secondary/40 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-1">
+                    <p className="font-semibold text-foreground">
+                      Recommended starting target: {formatFileSize(recommendedTarget.bytes)}
+                    </p>
+                    <p className="leading-6 text-muted-foreground">
+                      Based on this PDF's {formatFileSize(file.size)} size. Lower targets may work, but quality can drop quickly.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setTargetValue(recommendedTarget.value);
+                      setTargetUnit(recommendedTarget.unit);
+                    }}
+                  >
+                    Use recommended
+                  </Button>
+                </div>
+              ) : null}
               {targetError ? <p id="target-size-error" className="text-sm text-destructive">{targetError}</p> : null}
             </div>
           )}
@@ -335,7 +444,6 @@ export function CompressPdfPage() {
                 )}
                 {job.compression.targetBytes && job.compression.targetMet ? <p className="font-medium text-foreground">Target achieved</p> : null}
                 {job.compression.qualityLabel ? <p>Quality setting: {job.compression.qualityLabel}</p> : null}
-                {job.compression.attemptsUsed ? <p>Attempts used: {job.compression.attemptsUsed}</p> : null}
               </div>
             ) : null}
           </div>

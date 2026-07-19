@@ -1,5 +1,5 @@
 import { useRef, useState, type DragEvent, type KeyboardEvent } from "react";
-import { ArrowDown, ArrowUp, File, FilePlus2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, File, FilePlus2, UploadCloud, X } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -117,20 +117,24 @@ export function ToolFileSelector({
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
         className={cn(
-          "flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed p-5 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          isDragging ? "border-primary bg-secondary" : "border-border bg-muted/35 hover:bg-muted/55",
+          "flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed p-6 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          isDragging ? "border-primary bg-primary/10 shadow-sm" : "border-primary/30 bg-gradient-to-b from-secondary/50 to-background hover:border-primary/50 hover:bg-secondary/45",
         )}
       >
-        <FilePlus2 className="h-8 w-8 text-primary" aria-hidden="true" />
-        <strong className="mt-3 text-base font-semibold">Drag a file here or browse</strong>
-        <span className="mt-1 text-sm text-muted-foreground">Accepted: {acceptSummary}</span>
-        <span className="mt-4 rounded-md border bg-background px-3 py-1.5 text-sm font-medium">
-          Drop or press Enter
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+          <UploadCloud className="h-7 w-7" aria-hidden="true" />
+        </span>
+        <strong className="mt-4 text-base font-semibold text-foreground">Upload files here</strong>
+        <span className="mt-1 text-sm text-muted-foreground">Click this area or drop files from your device.</span>
+        <span className="mt-1 text-xs text-muted-foreground">Accepted: {acceptSummary}</span>
+        <span className="mt-4 inline-flex items-center gap-2 rounded-full border bg-background px-4 py-2 text-sm font-semibold text-foreground shadow-sm">
+          <FilePlus2 className="h-4 w-4 text-primary" aria-hidden="true" />
+          {actionLabel}
         </span>
       </label>
 
       <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
-        {actionLabel}
+        Browse from device
       </Button>
 
       {error ? (

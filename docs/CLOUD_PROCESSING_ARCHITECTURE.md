@@ -21,4 +21,4 @@ For target-size jobs, the worker creates several candidate PDFs in the per-job t
 
 ## Current Gate
 
-Docker and Ghostscript end-to-end compression have been verified locally for preset and target-size jobs. Compress PDF remains a gated cloud foundation rather than a production-ready catalogue tool until retention timing, deployment configuration, monitoring and environment-specific security checks are completed.
+Docker and Ghostscript end-to-end compression have been verified locally for preset and target-size jobs. Compress PDF appears as a temporary cloud-processing tool when the API and worker service are running. Production deployment still requires retention timing, deployment configuration, monitoring and environment-specific security checks.

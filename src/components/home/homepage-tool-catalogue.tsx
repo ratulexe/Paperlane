@@ -10,11 +10,11 @@ import { categoryLabels, tools } from "@/data/tools";
 import { getFunctionalToolRoute } from "@/lib/tool-routes";
 import type { ToolCategory } from "@/types/tool";
 
-type HomepageFilter = ToolCategory | "all" | "local";
+type HomepageFilter = ToolCategory | "all" | "available";
 
 const homepageFilterOptions: Array<{ value: HomepageFilter; label: string }> = [
   { value: "all", label: "All" },
-  { value: "local", label: "Local Tools" },
+  { value: "available", label: "Available Tools" },
   { value: "organise", label: "Organise" },
   { value: "convert", label: "Convert" },
   { value: "optimise", label: "Optimise" },
@@ -32,7 +32,7 @@ export function HomepageToolCatalogue() {
     return tools.filter((tool) => {
       const filterMatch =
         selectedFilter === "all" ||
-        (selectedFilter === "local" && tool.implementationStatus === "functional-local") ||
+        (selectedFilter === "available" && tool.implementationStatus !== "coming-soon") ||
         tool.category === selectedFilter;
       const searchMatch =
         !normalizedSearch ||
