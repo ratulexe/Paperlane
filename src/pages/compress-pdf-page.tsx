@@ -21,7 +21,6 @@ import {
   getCompressionJob,
   startCompressionJob,
   uploadCompressionInput,
-  type CloudApiError,
 } from "@/lib/cloud/compression-api";
 import { formatFileSize } from "@/lib/file-demo";
 import { usePageMetadata } from "@/lib/use-page-metadata";
@@ -57,6 +56,13 @@ function validatePdf(file: File) {
   return "";
 }
 
+function getCloudErrorMessage(error: unknown) {
+  if (error instanceof TypeError) {
+    return "Paperlane cloud processing is unavailable. Confirm the API and worker are running, then try again.";
+  }
+  return error instanceof Error ? error.message : "Paperlane cloud processing is unavailable.";
+}
+
 export function CompressPdfPage() {
   const navigate = useNavigate();
   const tool = getToolById("compress-pdf");
@@ -89,8 +95,15 @@ export function CompressPdfPage() {
     if (["complete", "failed", "expired", "cancelled"].includes(job.state)) return undefined;
     const timer = window.setInterval(() => {
       void getCompressionJob(job.jobId, jobToken)
-        .then(({ job: nextJob }) => setJob(nextJob))
-        .catch((pollError: CloudApiError) => setError(pollError.message));
+        .then(({ job: nextJob }) => {
+          setIsReady(true);
+          setError("");
+          setJob(nextJob);
+        })
+        .catch((pollError: unknown) => {
+          setIsReady(false);
+          setError(getCloudErrorMessage(pollError));
+        });
     }, 1500);
     return () => window.clearInterval(timer);
   }, [job, jobToken]);
@@ -116,7 +129,7 @@ export function CompressPdfPage() {
       const started = await startCompressionJob(uploadedJob.jobId, created.jobToken);
       setJob(started.job);
     } catch (cloudError) {
-      setError(cloudError instanceof Error ? cloudError.message : "Paperlane cloud processing is unavailable.");
+      setError(getCloudErrorMessage(cloudError));
     } finally {
       setIsUploading(false);
     }
@@ -124,8 +137,13 @@ export function CompressPdfPage() {
 
   async function deleteNow() {
     if (!job || !jobToken) return;
-    const deleted = await deleteCompressionJob(job.jobId, jobToken);
-    setJob(deleted.job);
+    try {
+      const deleted = await deleteCompressionJob(job.jobId, jobToken);
+      setError("");
+      setJob(deleted.job);
+    } catch (deleteError) {
+      setError(getCloudErrorMessage(deleteError));
+    }
   }
 
   function reset() {
@@ -255,7 +273,17 @@ export function CompressPdfPage() {
             <Button type="button" variant="outline" onClick={deleteNow} disabled={!job || !jobToken || job.state === "cancelled" || job.state === "expired"}>
               <Trash2 className="h-4 w-4" aria-hidden="true" />Delete now
             </Button>
-            <Button type="button" variant="outline" onClick={() => job && downloadCompressionOutput(job, jobToken)} disabled={!job?.canDownload || !jobToken}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (!job) return;
+                void downloadCompressionOutput(job, jobToken)
+                  .then(() => setError(""))
+                  .catch((downloadError: unknown) => setError(getCloudErrorMessage(downloadError)));
+              }}
+              disabled={!job?.canDownload || !jobToken}
+            >
               <Download className="h-4 w-4" aria-hidden="true" />Download compressed PDF
             </Button>
             <Button type="button" variant="outline" onClick={reset}>Process another document</Button>

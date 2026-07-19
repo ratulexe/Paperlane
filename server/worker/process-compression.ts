@@ -29,7 +29,9 @@ export async function processCompressionJob(jobId: string, store: FileJobStore, 
     return;
   }
 
-  const tempRoot = await fs.mkdtemp(path.join(await fs.realpath(process.cwd()), "paperlane-job-"));
+  const tempBase = process.env.PAPERLANE_WORKER_TMP_DIR ?? path.join(process.cwd(), "tmp");
+  await fs.mkdir(tempBase, { recursive: true });
+  const tempRoot = await fs.mkdtemp(path.join(await fs.realpath(tempBase), "paperlane-job-"));
   const inputPath = path.join(tempRoot, "input.pdf");
   const outputPath = path.join(tempRoot, "output.pdf");
 

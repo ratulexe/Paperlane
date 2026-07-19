@@ -12,8 +12,8 @@
     "test:run": "vitest run",
     "server:typecheck": "tsc -p tsconfig.server.json --noEmit",
     "server:build": "tsc -p tsconfig.server.json",
-    "api:start": "node dist-server/api/index.js",
-    "worker:start": "node dist-server/worker/index.js"
+    "api:start": "node dist-server/server/api/index.js",
+    "worker:start": "node dist-server/server/worker/index.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
