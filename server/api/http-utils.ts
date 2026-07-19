@@ -56,8 +56,9 @@ export function publicJob(job: CloudJobRecord): PublicCloudJob {
   return {
     jobId: job.jobId,
     toolType: job.toolType,
-    preset: job.preset,
+    compressionRequest: job.compressionRequest,
     state: job.state,
+    subStage: job.subStage,
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
     expiresAt: job.expiresAt,

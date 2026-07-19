@@ -50,7 +50,7 @@ describe("compression API", () => {
     const createResponse = await fetch(`${baseUrl}/api/v1/compression-jobs`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Origin: "http://localhost:5173" },
-      body: JSON.stringify({ preset: "balanced" }),
+      body: JSON.stringify({ mode: "preset", preset: "balanced" }),
     });
     expect(createResponse.status).toBe(201);
     expect(createResponse.headers.get("access-control-allow-origin")).toBe("http://localhost:5173");
@@ -70,5 +70,32 @@ describe("compression API", () => {
     const body = (await status.json()) as { job: { jobId: string; state: string; canDownload: boolean } };
     expect(body.job.jobId).toBe(created.job.jobId);
     expect(body.job.canDownload).toBe(false);
+  });
+
+  it("creates a target-size compression job", async () => {
+    const createResponse = await fetch(`${baseUrl}/api/v1/compression-jobs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "target-size", targetBytes: 200 * 1024 }),
+    });
+    expect(createResponse.status).toBe(201);
+    const created = (await createResponse.json()) as { job: { compressionRequest: { mode: string; targetBytes: number } } };
+    expect(created.job.compressionRequest).toEqual({ mode: "target-size", targetBytes: 200 * 1024 });
+  });
+
+  it.each([
+    [{ mode: "target-size", targetBytes: 12 * 1024 }, 400],
+    [{ mode: "target-size", targetBytes: 30 * 1024 * 1024 }, 400],
+    [{ mode: "target-size", targetBytes: "200 KB" }, 400],
+    [{ mode: "unknown", targetBytes: 200 * 1024 }, 400],
+    [{ mode: "preset", preset: "balanced", targetBytes: 200 * 1024 }, 400],
+    [{ mode: "target-size", preset: "balanced", targetBytes: 200 * 1024 }, 400],
+  ])("rejects invalid compression request %#", async (payload, expectedStatus) => {
+    const createResponse = await fetch(`${baseUrl}/api/v1/compression-jobs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    expect(createResponse.status).toBe(expectedStatus);
   });
 });

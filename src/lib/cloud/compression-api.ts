@@ -1,4 +1,4 @@
-import type { CompressionPreset, CreateCompressionJobResponse, PublicCloudJob } from "@/types/cloud-processing";
+import type { CompressionRequest, CreateCompressionJobResponse, PublicCloudJob } from "@/types/cloud-processing";
 
 const requestTimeoutMs = 30_000;
 
@@ -44,10 +44,10 @@ export async function checkCloudReadiness() {
   if (!response.ok) throw new CloudApiError("Paperlane cloud processing is not ready.", response.status);
 }
 
-export function createCompressionJob(preset: CompressionPreset) {
+export function createCompressionJob(compression: CompressionRequest) {
   return requestJson<CreateCompressionJobResponse>("/api/v1/compression-jobs", {
     method: "POST",
-    body: JSON.stringify({ preset }),
+    body: JSON.stringify(compression),
   });
 }
 

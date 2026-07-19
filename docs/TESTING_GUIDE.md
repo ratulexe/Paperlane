@@ -21,6 +21,7 @@ The automated test suite focuses on deterministic utilities:
 - Cloud job token verification
 - Cloud upload validation
 - Cloud compression result calculation
+- Cloud target-size validation and candidate selection
 - Cloud cleanup selection
 - Cloud rate limiting
 - Ghostscript argument construction
@@ -39,7 +40,7 @@ Use harmless generated files only.
 - Remove Blank Pages: test suggested blank pages, manual checkbox changes, no-selection rejection and all-pages rejection.
 - Add Watermark: test each position, selected pages, opacity, font-size limits and empty text rejection.
 - Visual Sign PDF: test drawn, typed and uploaded signature flows, page choice, placement and size.
-- Compress PDF: requires API, worker and Ghostscript through Docker before it can be marked functional. Test upload consent, preset choice, job states, protected download, delete-now and actual output opening.
+- Compress PDF: requires API, worker and Ghostscript through Docker before it can be marked functional. Test upload consent, preset choice, target maximum size, reachable and unreachable targets, job states, protected download, delete-now and actual output opening.
 
 ## Network Verification
 

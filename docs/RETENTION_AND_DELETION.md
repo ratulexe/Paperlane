@@ -19,4 +19,6 @@ The frontend Delete now action is a convenience. Server-side expiration and clea
 
 ## Metadata
 
-Operational metadata may include random job ID, job state, timestamps, file size, compression preset, processing duration, public error category and deletion state. File contents and job tokens must not be logged.
+Operational metadata may include random job ID, job state, timestamps, file size, compression mode, compression preset or target size, candidate attempt counts, selected candidate size, processing duration, public error category and deletion state. File contents and job tokens must not be logged.
+
+For target-size compression, intermediate candidate files are stored only in the worker's per-job temporary directory and are removed before the job finishes. The API stores only the selected final output until deletion or expiration.

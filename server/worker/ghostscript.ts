@@ -3,6 +3,11 @@ import { PublicApiError } from "../shared/errors.js";
 import { compressionPresets } from "../shared/validation.js";
 import type { CompressionPreset } from "../shared/types.js";
 
+export type TargetGhostscriptSettings = {
+  dpi: number;
+  jpegQuality: number;
+};
+
 export function buildGhostscriptArgs(inputPath: string, outputPath: string, preset: CompressionPreset) {
   const config = compressionPresets[preset];
   return [
@@ -18,16 +23,41 @@ export function buildGhostscriptArgs(inputPath: string, outputPath: string, pres
   ];
 }
 
-export function runGhostscript(options: {
+export function buildTargetGhostscriptArgs(inputPath: string, outputPath: string, settings: TargetGhostscriptSettings) {
+  return [
+    "-sDEVICE=pdfwrite",
+    "-dCompatibilityLevel=1.4",
+    "-dNOPAUSE",
+    "-dQUIET",
+    "-dBATCH",
+    "-dSAFER",
+    "-dDetectDuplicateImages=true",
+    "-dCompressFonts=true",
+    "-dSubsetFonts=true",
+    "-dAutoRotatePages=/None",
+    "-dColorImageDownsampleType=/Bicubic",
+    "-dGrayImageDownsampleType=/Bicubic",
+    "-dMonoImageDownsampleType=/Subsample",
+    "-dDownsampleColorImages=true",
+    "-dDownsampleGrayImages=true",
+    "-dDownsampleMonoImages=true",
+    `-dColorImageResolution=${settings.dpi}`,
+    `-dGrayImageResolution=${settings.dpi}`,
+    `-dMonoImageResolution=${Math.max(settings.dpi, 150)}`,
+    `-dJPEGQ=${settings.jpegQuality}`,
+    `-sOutputFile=${outputPath}`,
+    inputPath,
+  ];
+}
+
+export function runGhostscriptWithArgs(options: {
   binary: string;
-  inputPath: string;
-  outputPath: string;
-  preset: CompressionPreset;
+  args: string[];
   timeoutMs: number;
   shouldCancel?: () => Promise<boolean>;
 }) {
   return new Promise<void>((resolve, reject) => {
-    const child = spawn(options.binary, buildGhostscriptArgs(options.inputPath, options.outputPath, options.preset), {
+    const child = spawn(options.binary, options.args, {
       windowsHide: true,
       stdio: ["ignore", "ignore", "pipe"],
     });
@@ -65,5 +95,21 @@ export function runGhostscript(options: {
       if (code === 0) finish();
       else finish(new PublicApiError("COMPRESSION_FAILED", stderr || "Ghostscript exited with an error.", 500));
     });
+  });
+}
+
+export function runGhostscript(options: {
+  binary: string;
+  inputPath: string;
+  outputPath: string;
+  preset: CompressionPreset;
+  timeoutMs: number;
+  shouldCancel?: () => Promise<boolean>;
+}) {
+  return runGhostscriptWithArgs({
+    binary: options.binary,
+    args: buildGhostscriptArgs(options.inputPath, options.outputPath, options.preset),
+    timeoutMs: options.timeoutMs,
+    shouldCancel: options.shouldCancel,
   });
 }

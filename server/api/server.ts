@@ -6,7 +6,7 @@ import { FileStorage } from "../shared/storage.js";
 import { loadServerConfig, type ServerConfig } from "../shared/config.js";
 import { PublicApiError, publicMessage } from "../shared/errors.js";
 import { createId, createToken, hashToken, tokenMatches } from "../shared/ids.js";
-import { assertCompressionPreset, sanitizeFilename, validatePdfReadable, validatePdfUpload } from "../shared/validation.js";
+import { parseCompressionRequest, sanitizeFilename, validatePdfReadable, validatePdfUpload, validateTargetBelowOriginal } from "../shared/validation.js";
 import type { CloudJobRecord, CreateCompressionJobRequest } from "../shared/types.js";
 import { cleanupJob, shouldDeleteCompletedOutput, shouldExpireJob } from "../shared/cleanup.js";
 import { getClientIp, publicJob, readBodyWithLimit, readJson, requestId, sendError, sendJson } from "./http-utils.js";
@@ -97,7 +97,7 @@ export async function createApiServer(dependencies: ApiDependencies = {}) {
           throw new PublicApiError("RATE_LIMITED", publicMessage("RATE_LIMITED"), 429);
         }
         const body = await readJson<CreateCompressionJobRequest>(request);
-        assertCompressionPreset(body.preset);
+        const compressionRequest = parseCompressionRequest(body, config.maxUploadBytes);
         const now = new Date();
         const jobId = createId("job");
         const token = createToken();
@@ -106,7 +106,7 @@ export async function createApiServer(dependencies: ApiDependencies = {}) {
           jobId,
           tokenHash: hashToken(token),
           toolType: "compress-pdf",
-          preset: body.preset,
+          compressionRequest,
           state: "awaiting-upload",
           createdAt: now.toISOString(),
           updatedAt: now.toISOString(),
@@ -142,6 +142,9 @@ export async function createApiServer(dependencies: ApiDependencies = {}) {
         const mimeType = typeof request.headers["content-type"] === "string" ? request.headers["content-type"] : "";
         validatePdfUpload({ filename, mimeType, bytes, maxUploadBytes: config.maxUploadBytes });
         await validatePdfReadable(bytes);
+        if (job.compressionRequest.mode === "target-size") {
+          validateTargetBelowOriginal(job.compressionRequest.targetBytes, bytes.length);
+        }
         const inputKey = storage.createInputKey(job.jobId);
         await storage.putInput(inputKey, bytes);
         const updated = await store.update(job.jobId, (current) => ({

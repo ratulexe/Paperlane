@@ -3,8 +3,9 @@ import path from "node:path";
 import { FileJobStore } from "../shared/job-store.js";
 import { FileStorage } from "../shared/storage.js";
 import { PublicApiError } from "../shared/errors.js";
-import { calculateCompressionResult, validatePdfReadable } from "../shared/validation.js";
+import { calculateCompressionResult, calculateTargetCompressionResult, getPdfPageCount, validatePdfReadable } from "../shared/validation.js";
 import { runGhostscript } from "./ghostscript.js";
+import { defaultMaximumTargetAttempts, runTargetSizeSearch } from "./target-size-search.js";
 import type { ServerConfig } from "../shared/config.js";
 
 async function assertPdfOutput(filePath: string) {
@@ -45,24 +46,85 @@ export async function processCompressionJob(jobId: string, store: FileJobStore, 
     await fs.copyFile(storage.inputPath(job.inputKey), inputPath);
     const inputBytes = await fs.readFile(inputPath);
     await validatePdfReadable(inputBytes);
+    const originalPageCount = await getPdfPageCount(inputBytes);
 
     await store.update(jobId, (current) => ({ ...current, state: "processing" }));
-    await runGhostscript({
-      binary: config.ghostscriptBinary,
-      inputPath,
-      outputPath,
-      preset: job.preset,
-      timeoutMs: config.jobTimeoutMs,
-      shouldCancel: async () => Boolean((await store.read(jobId))?.cancellationRequested),
-    });
+    if (job.compressionRequest.mode === "preset") {
+      await runGhostscript({
+        binary: config.ghostscriptBinary,
+        inputPath,
+        outputPath,
+        preset: job.compressionRequest.preset,
+        timeoutMs: config.jobTimeoutMs,
+        shouldCancel: async () => Boolean((await store.read(jobId))?.cancellationRequested),
+      });
+    } else {
+      const searchStartedAt = Date.now();
+      const maximumAttempts = defaultMaximumTargetAttempts;
+      const targetBytes = job.compressionRequest.targetBytes;
+      await store.update(jobId, (current) => ({
+        ...current,
+        subStage: "preparing-search",
+        maximumAttempts,
+      }));
+      const search = await runTargetSizeSearch({
+        binary: config.ghostscriptBinary,
+        inputPath,
+        targetBytes,
+        originalPageCount,
+        maximumAttempts,
+        timeoutMs: config.jobTimeoutMs,
+        tempDirectory: tempRoot,
+        cancellationCheck: async () => Boolean((await store.read(jobId))?.cancellationRequested),
+        onAttemptStart: async (attempt, maximum) => {
+          await store.update(jobId, (current) => ({
+            ...current,
+            subStage: "generating-candidate",
+            attemptsUsed: attempt,
+            maximumAttempts: maximum,
+            attemptCount: Math.max(current.attemptCount, attempt),
+          }));
+        },
+        onCandidateValidated: async (attempt, candidate) => {
+          await store.update(jobId, (current) => ({
+            ...current,
+            subStage: "comparing-result",
+            attemptsUsed: attempt,
+            smallestCandidateBytes: current.smallestCandidateBytes
+              ? Math.min(current.smallestCandidateBytes, candidate.outputBytes)
+              : candidate.outputBytes,
+          }));
+        },
+      });
+      await store.update(jobId, (current) => ({
+        ...current,
+        subStage: "selecting-best-output",
+        attemptsUsed: search.attemptsUsed,
+        targetMet: search.targetMet,
+        smallestCandidateBytes: search.smallestCandidate.outputBytes,
+        selectedCandidateBytes: search.selectedCandidate.outputBytes,
+        candidateQualityLevel: search.selectedCandidate.settings.qualityLabel,
+        candidateDpi: search.selectedCandidate.settings.dpi,
+        targetDifferenceBytes: search.selectedCandidate.outputBytes - targetBytes,
+        attemptCount: Math.max(current.attemptCount, search.attemptsUsed),
+      }));
+      await fs.copyFile(search.selectedCandidate.outputPath, outputPath);
+      const elapsed = Date.now() - searchStartedAt;
+      if (elapsed >= config.jobTimeoutMs) throw new PublicApiError("PROCESSING_TIMEOUT", "Target search timed out.", 504);
+    }
 
-    await store.update(jobId, (current) => ({ ...current, state: "validating-output" }));
+    await store.update(jobId, (current) => ({ ...current, state: "validating-output", subStage: "finalising-output" }));
     const outputBytes = await assertPdfOutput(outputPath);
+    const outputPageCount = await getPdfPageCount(await fs.readFile(outputPath));
+    if (outputPageCount !== originalPageCount) {
+      throw new PublicApiError("OUTPUT_PAGE_COUNT_MISMATCH", "Output page count mismatch.", 500);
+    }
     const outputKey = storage.createOutputKey(jobId);
     await storage.putOutput(outputKey, outputPath);
     await storage.deleteInput(job.inputKey);
 
     const outputExpiresAt = new Date(Date.now() + config.outputRetentionMs).toISOString();
+    const targetRequest = job.compressionRequest.mode === "target-size" ? job.compressionRequest : undefined;
     await store.update(jobId, (current) => ({
       ...current,
       state: "complete",
@@ -70,7 +132,19 @@ export async function processCompressionJob(jobId: string, store: FileJobStore, 
       outputBytes,
       outputExpiresAt,
       expiresAt: outputExpiresAt,
-      compression: calculateCompressionResult(job.originalBytes ?? inputBytes.length, outputBytes),
+      subStage: undefined,
+      compression:
+        targetRequest
+          ? calculateTargetCompressionResult({
+              originalBytes: job.originalBytes ?? inputBytes.length,
+              outputBytes,
+              targetBytes: targetRequest.targetBytes,
+              targetMet: outputBytes <= targetRequest.targetBytes,
+              attemptsUsed: current.attemptsUsed ?? current.attemptCount,
+              qualityLabel: current.candidateQualityLevel ?? "Maximum practical compression",
+              smallestCandidateBytes: current.smallestCandidateBytes ?? outputBytes,
+            })
+          : calculateCompressionResult(job.originalBytes ?? inputBytes.length, outputBytes),
       deletion: { ...current.deletion, inputDeleted: true, localFilesDeleted: true },
     }));
   } catch (error) {

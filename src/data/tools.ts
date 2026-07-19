@@ -192,7 +192,7 @@ export const tools: DocumentTool[] = [
     id: "compress-pdf",
     name: "Compress PDF",
     shortDescription: "Reduce PDF size through a gated temporary cloud-processing workflow.",
-    detailedDescription: "Compress PDF is wired to a temporary cloud API and worker foundation, but remains gated until worker output is verified.",
+    detailedDescription: "Compress PDF is wired to a temporary cloud API and worker foundation with preset and target-size compression modes.",
     category: "optimise",
     icon: Archive,
     acceptedFileTypes: [pdfFileType],

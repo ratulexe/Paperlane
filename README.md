@@ -2,7 +2,7 @@
 
 ## Overview
 
-Paperlane is a polished document productivity website for a privacy-conscious workspace concept. It includes selected browser-local PDF tools and a gated temporary cloud-processing foundation for Compress PDF.
+Paperlane is a polished document productivity website for a privacy-conscious workspace concept. It includes selected browser-local PDF tools and a gated temporary cloud-processing foundation for Compress PDF, including preset compression and target maximum size attempts.
 
 ## Tagline
 
@@ -37,12 +37,12 @@ Privacy-conscious document productivity SaaS concept with selected browser-local
 - 19 document workflows
 - 9 browser-local functional tools
 - 10 clearly labelled coming-soon tools
-- Compress PDF API and worker foundation for temporary cloud processing
+- Compress PDF API and worker foundation for temporary cloud processing with preset and target-size modes
 - Tool search and category filters
 - Reusable workflow Dialog
 - Local PDF processing for merge, split, rotate, reorder, image-to-PDF, PDF-to-image, blank-page review/removal, text watermark and visual-signature tools
 - Real Blob/object URL downloads for functional tools
-- File metadata previews and simulated progress for concept tools
+- File metadata previews and disabled roadmap cards for concept tools
 - Responsible AI notices
 - Privacy-design explanation
 - Accessible contact-form demonstration
@@ -117,7 +117,9 @@ Supported limits:
 
 Compress PDF has a dedicated route, API, worker and Docker setup for temporary cloud processing. It creates token-gated jobs, validates uploads, queues work, runs Ghostscript in the worker, validates output, calculates real byte-size results and supports deletion/expiration.
 
-Because Docker and Ghostscript were not available in this workspace, the Compress PDF catalogue card remains gated as Coming soon until real worker-produced output is verified.
+Preset mode offers high quality, balanced and smallest-size options. Target-size mode lets the user enter a maximum size goal; the worker tries several controlled Ghostscript settings, selects the largest valid output at or below the target when possible, and otherwise returns the smallest valid output with a clear target-not-reached result.
+
+The Compress PDF catalogue card remains gated as Coming soon until the cloud-processing service is intentionally enabled for the target environment.
 
 ## Concept Previews
 
@@ -127,7 +129,7 @@ The remaining 10 tools are labelled as concept previews and appear as roadmap it
 
 Paperlane is still a product concept, not a production document platform.
 
-- Compress PDF is not marked production-functional until Docker/Ghostscript end-to-end output is verified
+- Compress PDF is not marked production-functional until Docker/Ghostscript, retention, deletion and deployment checks are completed for the target environment
 - Browser-local tools do not upload files to a Paperlane server
 - Compress PDF requires a separate temporary cloud-processing API and worker when enabled
 - No document storage or document history
@@ -137,6 +139,7 @@ Paperlane is still a product concept, not a production document platform.
 - No authentication
 - No database
 - Browser-local processing can use significant device memory
+- Target-size compression is a best-effort maximum-size workflow, not an exact-size guarantee
 - Local processing reduces server exposure but does not guarantee complete security on untrusted, shared or compromised devices
 
 ## Documentation

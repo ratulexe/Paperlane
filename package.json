@@ -11,6 +11,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "server:typecheck": "tsc -p tsconfig.server.json --noEmit",
+    "server:test": "vitest run server",
     "server:build": "tsc -p tsconfig.server.json",
     "api:start": "node dist-server/server/api/index.js",
     "worker:start": "node dist-server/server/worker/index.js"

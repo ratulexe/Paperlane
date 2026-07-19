@@ -1,5 +1,15 @@
 export type CompressionPreset = "high-quality" | "balanced" | "smallest-size";
 
+export type CompressionRequest =
+  | {
+      mode: "preset";
+      preset: CompressionPreset;
+    }
+  | {
+      mode: "target-size";
+      targetBytes: number;
+    };
+
 export type CloudToolType = "compress-pdf";
 
 export type CloudJobState =
@@ -33,7 +43,21 @@ export type PublicErrorCategory =
   | "DOWNLOAD_EXPIRED"
   | "UNAUTHORISED_JOB"
   | "INVALID_STATE"
+  | "INVALID_TARGET_SIZE"
+  | "TARGET_TOO_SMALL"
+  | "TARGET_TOO_LARGE"
+  | "TARGET_NOT_SMALLER_THAN_ORIGINAL"
+  | "TARGET_NOT_REACHED"
+  | "OUTPUT_PAGE_COUNT_MISMATCH"
   | "INTERNAL_ERROR";
+
+export type CompressionSubStage =
+  | "preparing-search"
+  | "generating-candidate"
+  | "validating-candidate"
+  | "comparing-result"
+  | "selecting-best-output"
+  | "finalising-output";
 
 export type DeletionState = {
   inputDeleted: boolean;
@@ -47,14 +71,22 @@ export type CompressionResult = {
   savedBytes: number;
   savedPercent: number;
   outputLarger: boolean;
+  targetBytes?: number;
+  targetMet?: boolean;
+  attemptsUsed?: number;
+  qualityLabel?: string;
+  smallestCandidateBytes?: number;
+  selectedCandidateBytes?: number;
+  targetDifferenceBytes?: number;
 };
 
 export type CloudJobRecord = {
   jobId: string;
   tokenHash: string;
   toolType: CloudToolType;
-  preset: CompressionPreset;
+  compressionRequest: CompressionRequest;
   state: CloudJobState;
+  subStage?: CompressionSubStage;
   createdAt: string;
   updatedAt: string;
   expiresAt: string;
@@ -63,6 +95,14 @@ export type CloudJobRecord = {
   originalBytes?: number;
   outputBytes?: number;
   compression?: CompressionResult;
+  targetMet?: boolean;
+  attemptsUsed?: number;
+  maximumAttempts?: number;
+  smallestCandidateBytes?: number;
+  selectedCandidateBytes?: number;
+  candidateQualityLevel?: string;
+  candidateDpi?: number;
+  targetDifferenceBytes?: number;
   inputKey?: string;
   outputKey?: string;
   safeOutputFilename?: string;
@@ -78,8 +118,8 @@ export type PublicCloudJob = Omit<CloudJobRecord, "tokenHash" | "inputKey" | "ou
 };
 
 export type CreateCompressionJobRequest = {
-  preset: CompressionPreset;
-};
+  compression: CompressionRequest;
+} | CompressionRequest;
 
 export type CreateCompressionJobResponse = {
   job: PublicCloudJob;

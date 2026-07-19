@@ -22,9 +22,10 @@ import {
   startCompressionJob,
   uploadCompressionInput,
 } from "@/lib/cloud/compression-api";
+import { targetBytesFromInput, validateTargetSize, type TargetSizeUnit } from "@/lib/cloud/target-size";
 import { formatFileSize } from "@/lib/file-demo";
 import { usePageMetadata } from "@/lib/use-page-metadata";
-import type { CompressionPreset, PublicCloudJob } from "@/types/cloud-processing";
+import type { CompressionPreset, CompressionRequest, PublicCloudJob } from "@/types/cloud-processing";
 
 const maxUploadBytes = 25 * 1024 * 1024;
 const retentionCopy = "30 minutes for uploaded inputs that are not processed, and 30 minutes for completed outputs.";
@@ -32,6 +33,13 @@ const retentionCopy = "30 minutes for uploaded inputs that are not processed, an
 function stageLabel(job?: PublicCloudJob, uploading = false) {
   if (uploading) return "Uploading";
   if (!job) return "Ready";
+  if (job.subStage === "generating-candidate" && job.attemptsUsed && job.maximumAttempts) {
+    return `Testing compression setting ${job.attemptsUsed} of ${job.maximumAttempts}`;
+  }
+  if (job.subStage === "validating-candidate") return "Checking candidate output";
+  if (job.subStage === "comparing-result") return "Comparing target-size result";
+  if (job.subStage === "selecting-best-output") return "Selecting best output";
+  if (job.subStage === "finalising-output") return "Finalising output";
   const labels: Record<PublicCloudJob["state"], string> = {
     created: "Validating",
     "awaiting-upload": "Ready",
@@ -71,7 +79,10 @@ export function CompressPdfPage() {
     .map((toolId) => tools.find((item) => item.id === toolId))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
   const [file, setFile] = useState<File | null>(null);
+  const [compressionMode, setCompressionMode] = useState<CompressionRequest["mode"]>("preset");
   const [preset, setPreset] = useState<CompressionPreset>("balanced");
+  const [targetValue, setTargetValue] = useState("");
+  const [targetUnit, setTargetUnit] = useState<TargetSizeUnit>("KB");
   const [consent, setConsent] = useState(false);
   const [job, setJob] = useState<PublicCloudJob | undefined>();
   const [jobToken, setJobToken] = useState("");
@@ -108,8 +119,18 @@ export function CompressPdfPage() {
     return () => window.clearInterval(timer);
   }, [job, jobToken]);
 
-  const canStart = Boolean(file && consent && !isUploading && (!job || ["failed", "cancelled", "expired"].includes(job.state)));
   const selectedError = useMemo(() => (file ? validatePdf(file) : ""), [file]);
+  const targetBytes = useMemo(() => targetBytesFromInput(targetValue, targetUnit), [targetUnit, targetValue]);
+  const targetError = useMemo(() => {
+    if (compressionMode !== "target-size") return "";
+    return validateTargetSize({ value: targetValue, unit: targetUnit, originalBytes: file?.size, maxUploadBytes });
+  }, [compressionMode, file?.size, targetUnit, targetValue]);
+  const compressionRequest = useMemo<CompressionRequest | undefined>(() => {
+    if (compressionMode === "preset") return { mode: "preset", preset };
+    if (!targetBytes || targetError) return undefined;
+    return { mode: "target-size", targetBytes };
+  }, [compressionMode, preset, targetBytes, targetError]);
+  const canStart = Boolean(file && consent && compressionRequest && !isUploading && (!job || ["failed", "cancelled", "expired"].includes(job.state)));
 
   async function startCompression() {
     if (!file) return;
@@ -118,10 +139,14 @@ export function CompressPdfPage() {
       setError(fileError);
       return;
     }
+    if (!compressionRequest) {
+      setError(targetError || "Choose a valid compression mode.");
+      return;
+    }
     setError("");
     setIsUploading(true);
     try {
-      const created = await createCompressionJob(preset);
+      const created = await createCompressionJob(compressionRequest);
       setJob(created.job);
       setJobToken(created.jobToken);
       const uploadedJob = await uploadCompressionInput(created.job.jobId, created.jobToken, file);
@@ -227,16 +252,63 @@ export function CompressPdfPage() {
           </div>
 
           <div className="grid gap-2">
-            <Label>Compression preset</Label>
-            <Select value={preset} onValueChange={(value) => setPreset(value as CompressionPreset)}>
+            <Label>Compression mode</Label>
+            <Select value={compressionMode} onValueChange={(value) => setCompressionMode(value as CompressionRequest["mode"])}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="high-quality">High quality</SelectItem>
-                <SelectItem value="balanced">Balanced</SelectItem>
-                <SelectItem value="smallest-size">Smallest size</SelectItem>
+                <SelectItem value="preset">Recommended preset</SelectItem>
+                <SelectItem value="target-size">Maximum target size</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {compressionMode === "preset" ? (
+            <div className="grid gap-2">
+              <Label>Compression preset</Label>
+              <Select value={preset} onValueChange={(value) => setPreset(value as CompressionPreset)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="high-quality">High quality</SelectItem>
+                  <SelectItem value="balanced">Balanced</SelectItem>
+                  <SelectItem value="smallest-size">Smallest size</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_120px]">
+                <div className="grid gap-2">
+                  <Label htmlFor="target-size-value">Target maximum size</Label>
+                  <Input
+                    id="target-size-value"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="200"
+                    value={targetValue}
+                    aria-describedby="target-size-help target-size-error"
+                    onChange={(event) => setTargetValue(event.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Unit</Label>
+                  <Select value={targetUnit} onValueChange={(value) => setTargetUnit(value as TargetSizeUnit)}>
+                    <SelectTrigger aria-label="Target size unit"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="KB">KB</SelectItem>
+                      <SelectItem value="MB">MB</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <p id="target-size-help" className="text-sm leading-6 text-muted-foreground">
+                Paperlane will try several controlled compression settings and return the highest-quality valid result at or below your target when possible.
+              </p>
+              <p className="text-sm leading-6 text-muted-foreground">
+                Very small targets may cause substantial image-quality loss and may be impossible for long, text-heavy or already optimised PDFs.
+              </p>
+              {targetError ? <p id="target-size-error" className="text-sm text-destructive">{targetError}</p> : null}
+            </div>
+          )}
 
           <div className="flex items-start gap-3 rounded-xl border bg-muted/25 p-4">
             <Checkbox id="cloud-consent" checked={consent} onCheckedChange={(value) => setConsent(value === true)} />
@@ -249,13 +321,21 @@ export function CompressPdfPage() {
             <p className="text-sm font-semibold">Status: {stageLabel(job, isUploading)}</p>
             {job?.compression ? (
               <div className="mt-3 grid gap-1 text-sm text-muted-foreground">
+                {job.compression.targetBytes ? <p>Target maximum: {formatFileSize(job.compression.targetBytes)}</p> : null}
                 <p>Original size: {formatFileSize(job.compression.originalBytes)}</p>
-                <p>Compressed size: {formatFileSize(job.compression.outputBytes)}</p>
-                <p>
-                  {job.compression.outputLarger
-                    ? `The compressed output is ${Math.abs(job.compression.savedPercent)}% larger than the original. This document may already be optimised.`
-                    : `Saved: ${formatFileSize(job.compression.savedBytes)} (${job.compression.savedPercent}%)`}
-                </p>
+                <p>{job.compression.targetBytes && job.compression.targetMet === false ? "Smallest valid result" : "Compressed size"}: {formatFileSize(job.compression.outputBytes)}</p>
+                {job.compression.targetBytes && job.compression.targetMet === false ? (
+                  <p className="font-medium text-foreground">Target not reached. Paperlane reached the configured quality and safety limits before reaching the requested size.</p>
+                ) : (
+                  <p>
+                    {job.compression.outputLarger
+                      ? `The compressed output is ${Math.abs(job.compression.savedPercent)}% larger than the original. This document may already be optimised.`
+                      : `Saved: ${formatFileSize(job.compression.savedBytes)} (${job.compression.savedPercent}%)`}
+                  </p>
+                )}
+                {job.compression.targetBytes && job.compression.targetMet ? <p className="font-medium text-foreground">Target achieved</p> : null}
+                {job.compression.qualityLabel ? <p>Quality setting: {job.compression.qualityLabel}</p> : null}
+                {job.compression.attemptsUsed ? <p>Attempts used: {job.compression.attemptsUsed}</p> : null}
               </div>
             ) : null}
           </div>
@@ -267,7 +347,7 @@ export function CompressPdfPage() {
           ) : null}
 
           <div className="flex flex-wrap gap-3">
-            <Button type="button" onClick={startCompression} disabled={!canStart || Boolean(selectedError) || isReady === false}>
+            <Button type="button" onClick={startCompression} disabled={!canStart || Boolean(selectedError) || Boolean(targetError) || isReady === false}>
               Compress PDF
             </Button>
             <Button type="button" variant="outline" onClick={deleteNow} disabled={!job || !jobToken || job.state === "cancelled" || job.state === "expired"}>

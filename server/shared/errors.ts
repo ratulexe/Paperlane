@@ -29,6 +29,12 @@ export const publicErrorMessages: Record<PublicErrorCategory, string> = {
   DOWNLOAD_EXPIRED: "This download has expired.",
   UNAUTHORISED_JOB: "This compression job cannot be accessed with the provided token.",
   INVALID_STATE: "This compression job is not ready for that action.",
+  INVALID_TARGET_SIZE: "Enter a valid target size.",
+  TARGET_TOO_SMALL: "Enter a target of at least 50 KB.",
+  TARGET_TOO_LARGE: "Choose a target below the configured maximum.",
+  TARGET_NOT_SMALLER_THAN_ORIGINAL: "The selected target must be smaller than the original PDF.",
+  TARGET_NOT_REACHED: "Paperlane could not reach the selected target size.",
+  OUTPUT_PAGE_COUNT_MISMATCH: "The compressed output did not preserve the original page count.",
   INTERNAL_ERROR: "Paperlane could not complete this cloud operation.",
 };
 
