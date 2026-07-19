@@ -28,7 +28,7 @@ function numberEnv(name: string, fallback: number) {
 export function loadServerConfig(): ServerConfig {
   const storageRoot = process.env.PAPERLANE_STORAGE_ROOT ?? "./.paperlane-cloud-storage";
   return {
-    apiPort: numberEnv("PAPERLANE_API_PORT", 8787),
+    apiPort: numberEnv("PORT", numberEnv("PAPERLANE_API_PORT", 8787)),
     allowedOrigins: (process.env.PAPERLANE_ALLOWED_ORIGINS ?? "http://localhost:5173,http://127.0.0.1:5173")
       .split(",")
       .map((origin) => origin.trim())

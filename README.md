@@ -122,6 +122,12 @@ Preset mode offers high quality, balanced and smallest-size options. Target-size
 
 The Compress PDF catalogue card is available as a temporary cloud-processing tool when the API and worker service are running.
 
+## Railway Staging
+
+Paperlane includes a Railway staging option for the Compress PDF cloud service. Railway does not run `docker-compose.yml` directly, so staging uses one combined container that starts both the API and worker while sharing one mounted Railway volume at `/data/paperlane-cloud`.
+
+Use `docker/railway-cloud.Dockerfile` as the Railway Dockerfile path and set `VITE_PAPERLANE_API_BASE_URL` in the Vercel frontend to the Railway public domain. See [Railway staging deployment](docs/RAILWAY_STAGING_DEPLOYMENT.md) for setup steps, environment variables and the testing checklist.
+
 ## Concept Previews
 
 The remaining 9 tools are labelled as concept previews and appear as roadmap items with disabled Coming soon actions. They do not process documents or create output files.
@@ -150,6 +156,7 @@ Paperlane is still a product concept, not a production document platform.
 - [Compress PDF workflow](docs/COMPRESS_PDF_WORKFLOW.md)
 - [Retention and deletion](docs/RETENTION_AND_DELETION.md)
 - [Local cloud development](docs/LOCAL_CLOUD_DEVELOPMENT.md)
+- [Railway staging deployment](docs/RAILWAY_STAGING_DEPLOYMENT.md)
 - [Security model](docs/SECURITY_MODEL.md)
 - [Deployment guide](docs/DEPLOYMENT_GUIDE.md)
 - [Testing guide](docs/TESTING_GUIDE.md)
