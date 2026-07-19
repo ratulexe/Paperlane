@@ -5,6 +5,7 @@ import type { CompressionPreset } from "../shared/types.js";
 
 export type TargetGhostscriptSettings = {
   dpi: number;
+  monoDpi?: number;
   jpegQuality: number;
 };
 
@@ -24,9 +25,12 @@ export function buildGhostscriptArgs(inputPath: string, outputPath: string, pres
 }
 
 export function buildTargetGhostscriptArgs(inputPath: string, outputPath: string, settings: TargetGhostscriptSettings) {
+  const monoDpi = settings.monoDpi ?? Math.max(settings.dpi, 150);
+
   return [
     "-sDEVICE=pdfwrite",
     "-dCompatibilityLevel=1.4",
+    "-dPDFSETTINGS=/screen",
     "-dNOPAUSE",
     "-dQUIET",
     "-dBATCH",
@@ -35,6 +39,10 @@ export function buildTargetGhostscriptArgs(inputPath: string, outputPath: string
     "-dCompressFonts=true",
     "-dSubsetFonts=true",
     "-dAutoRotatePages=/None",
+    "-dAutoFilterColorImages=false",
+    "-dAutoFilterGrayImages=false",
+    "-dColorImageFilter=/DCTEncode",
+    "-dGrayImageFilter=/DCTEncode",
     "-dColorImageDownsampleType=/Bicubic",
     "-dGrayImageDownsampleType=/Bicubic",
     "-dMonoImageDownsampleType=/Subsample",
@@ -43,7 +51,7 @@ export function buildTargetGhostscriptArgs(inputPath: string, outputPath: string
     "-dDownsampleMonoImages=true",
     `-dColorImageResolution=${settings.dpi}`,
     `-dGrayImageResolution=${settings.dpi}`,
-    `-dMonoImageResolution=${Math.max(settings.dpi, 150)}`,
+    `-dMonoImageResolution=${monoDpi}`,
     `-dJPEGQ=${settings.jpegQuality}`,
     `-sOutputFile=${outputPath}`,
     inputPath,

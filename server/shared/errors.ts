@@ -33,7 +33,7 @@ export const publicErrorMessages: Record<PublicErrorCategory, string> = {
   TARGET_TOO_SMALL: "Enter a target of at least 50 KB.",
   TARGET_TOO_LARGE: "Choose a target below the configured maximum.",
   TARGET_NOT_SMALLER_THAN_ORIGINAL: "The selected target must be smaller than the original PDF.",
-  TARGET_NOT_REACHED: "Paperlane could not reach the selected target size.",
+  TARGET_NOT_REACHED: "Paperlane could not make this PDF smaller with the selected target. Try a less aggressive target or use the original file.",
   OUTPUT_PAGE_COUNT_MISMATCH: "The compressed output did not preserve the original page count.",
   INTERNAL_ERROR: "Paperlane could not complete this cloud operation.",
 };

@@ -79,7 +79,13 @@ type FileSystemFileHandleLike = {
 type WindowWithFilePicker = Window & {
   showOpenFilePicker?: (options?: {
     excludeAcceptAllOption?: boolean;
+    id?: string;
     multiple?: boolean;
+    startIn?: "desktop" | "documents" | "downloads" | "music" | "pictures" | "videos";
+    types?: Array<{
+      description: string;
+      accept: Record<string, string[]>;
+    }>;
   }) => Promise<FileSystemFileHandleLike[]>;
 };
 
@@ -146,7 +152,7 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
   const isRemoveBlankPagesTool = tool.id === "remove-blank-pages";
   const isSignatureTool = tool.id === "sign-document";
   const allowMultiple = tool.id === "merge-pdf" || isImageTool;
-  const accept = isImageTool ? ".jpg,.jpeg,.png" : undefined;
+  const accept = isImageTool ? undefined : ".pdf,application/pdf";
   const canProcess = status !== "validating" && status !== "reading" && status !== "processing" && status !== "preparing-output";
   const chooseFileLabel = isImageTool ? "Select JPG/PNG Images" : "Choose PDF Files";
   const dropzoneTitle = isImageTool ? "Drop JPG/PNG images here" : "Drop PDF files here";
@@ -380,9 +386,22 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
     if (!canProcess) return;
 
     const filePicker = (window as WindowWithFilePicker).showOpenFilePicker;
-
-    if (window.isSecureContext && filePicker) {
-      void filePicker({ excludeAcceptAllOption: false, multiple: allowMultiple })
+    if (isImageTool && window.isSecureContext && filePicker) {
+      void filePicker({
+        id: "paperlane-jpg-to-pdf-downloads-picker",
+        startIn: "downloads",
+        multiple: true,
+        excludeAcceptAllOption: false,
+        types: [
+          {
+            description: "JPG and PNG images",
+            accept: {
+              "image/jpeg": [".jpg", ".jpeg"],
+              "image/png": [".png"],
+            },
+          },
+        ],
+      })
         .then(async (handles) => {
           const pickedFiles = await Promise.all(handles.map((handle) => handle.getFile()));
           await addFiles(pickedFiles);
@@ -684,6 +703,11 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
       <Button type="button" variant="outline" onClick={openFilePicker} disabled={!canProcess}>
         Browse from device
       </Button>
+      {isImageTool ? (
+        <p className="rounded-xl border bg-muted/25 p-3 text-sm leading-6 text-muted-foreground">
+          If a Phone Link folder opens empty, choose Downloads &gt; Mobile Devices instead, or drag the images from File Explorer into the upload area.
+        </p>
+      ) : null}
 
       {files.length ? (
         <div className="space-y-2">

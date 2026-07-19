@@ -6,6 +6,7 @@ import { buildTargetGhostscriptArgs, runGhostscriptWithArgs } from "./ghostscrip
 
 export type CompressionCandidateSettings = {
   dpi: number;
+  monoDpi?: number;
   jpegQuality: number;
   qualityLabel: string;
 };
@@ -21,6 +22,7 @@ export type TargetSearchInput = {
   binary: string;
   inputPath: string;
   targetBytes: number;
+  originalBytes: number;
   originalPageCount: number;
   maximumAttempts: number;
   timeoutMs: number;
@@ -37,7 +39,7 @@ export type TargetSearchResult = {
   attemptsUsed: number;
 };
 
-export const defaultMaximumTargetAttempts = 14;
+export const defaultMaximumTargetAttempts = 20;
 export const targetToleranceRatio = 0.03;
 
 export function createCandidateSettings(maximumAttempts = defaultMaximumTargetAttempts): CompressionCandidateSettings[] {
@@ -56,14 +58,22 @@ export function createCandidateSettings(maximumAttempts = defaultMaximumTargetAt
     { dpi: 50, jpegQuality: 32, qualityLabel: "Maximum practical compression" },
     { dpi: 50, jpegQuality: 28, qualityLabel: "Maximum practical compression" },
     { dpi: 50, jpegQuality: 25, qualityLabel: "Maximum practical compression" },
+    { dpi: 44, monoDpi: 120, jpegQuality: 22, qualityLabel: "Maximum practical compression" },
+    { dpi: 40, monoDpi: 110, jpegQuality: 20, qualityLabel: "Maximum practical compression" },
+    { dpi: 36, monoDpi: 100, jpegQuality: 18, qualityLabel: "Maximum practical compression" },
+    { dpi: 32, monoDpi: 90, jpegQuality: 16, qualityLabel: "Maximum practical compression" },
+    { dpi: 28, monoDpi: 80, jpegQuality: 14, qualityLabel: "Maximum practical compression" },
+    { dpi: 24, monoDpi: 72, jpegQuality: 12, qualityLabel: "Maximum practical compression" },
   ];
 
   return settings.slice(0, Math.max(1, Math.min(maximumAttempts, settings.length)));
 }
 
-export function selectBestCandidate(candidates: CompressionCandidateResult[], targetBytes: number) {
-  const validCandidates = candidates.filter((candidate) => candidate.valid);
-  if (!validCandidates.length) throw new PublicApiError("OUTPUT_INVALID", "No valid compression candidate.", 500);
+export function selectBestCandidate(candidates: CompressionCandidateResult[], targetBytes: number, originalBytes = Number.POSITIVE_INFINITY) {
+  const validCandidates = candidates.filter((candidate) => candidate.valid && candidate.outputBytes < originalBytes);
+  if (!validCandidates.length) {
+    throw new PublicApiError("TARGET_NOT_REACHED", "No candidate made the PDF smaller than the original.", 422);
+  }
 
   const smallestCandidate = [...validCandidates].sort((a, b) => a.outputBytes - b.outputBytes)[0];
   const underTarget = validCandidates
@@ -146,7 +156,7 @@ export async function runTargetSizeSearch(input: TargetSearchInput): Promise<Tar
     throw new PublicApiError("OUTPUT_PAGE_COUNT_MISMATCH", "Every candidate changed the page count.", 500);
   }
 
-  const selected = selectBestCandidate(candidates, input.targetBytes);
+  const selected = selectBestCandidate(candidates, input.targetBytes, input.originalBytes);
   await Promise.all(
     candidates
       .filter((candidate) => candidate.valid && candidate.outputPath !== selected.selectedCandidate.outputPath)

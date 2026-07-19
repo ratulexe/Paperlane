@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getToolById } from "@/data/tool-pages";
@@ -38,7 +39,7 @@ function stageLabel(job?: PublicCloudJob, uploading = false) {
     return "Complete - target not reached";
   }
   if (job.subStage === "generating-candidate" && job.attemptsUsed && job.maximumAttempts) {
-    return `Testing compression setting ${job.attemptsUsed} of ${job.maximumAttempts}`;
+    return "Optimising toward selected file size";
   }
   if (job.subStage === "validating-candidate") return "Checking candidate output";
   if (job.subStage === "comparing-result") return "Comparing target-size result";
@@ -57,6 +58,60 @@ function stageLabel(job?: PublicCloudJob, uploading = false) {
     cancelled: "Cancelled",
   };
   return labels[job.state];
+}
+
+function isActiveJob(job?: PublicCloudJob) {
+  return Boolean(job && !["complete", "failed", "expired", "cancelled"].includes(job.state));
+}
+
+function estimateTotalSeconds(fileBytes?: number, mode: CompressionRequest["mode"] = "preset") {
+  const sizeMb = fileBytes ? fileBytes / (1024 * 1024) : 1;
+  const baseSeconds = mode === "target-size" ? 35 + sizeMb * 10 : 20 + sizeMb * 7;
+  return Math.min(mode === "target-size" ? 180 : 120, Math.max(mode === "target-size" ? 35 : 20, Math.round(baseSeconds)));
+}
+
+function elapsedSeconds(startedAt: number | undefined, now: number) {
+  if (!startedAt) return 0;
+  return Math.max(0, Math.floor((now - startedAt) / 1000));
+}
+
+function compressionProgress(job: PublicCloudJob | undefined, uploading: boolean, now: number, startedAt: number | undefined, estimatedTotalSeconds: number) {
+  const elapsed = elapsedSeconds(startedAt, now);
+  if (uploading) return Math.min(22, 10 + elapsed * 3);
+  if (!job) return 0;
+  if (job.state === "failed" || job.state === "cancelled" || job.state === "expired") return 0;
+  if (job.state === "complete") return 100;
+
+  const timeBasedProgress = Math.min(91, 44 + Math.round((elapsed / estimatedTotalSeconds) * 47));
+  if (job.subStage === "generating-candidate" && job.attemptsUsed && job.maximumAttempts) {
+    const attemptProgress = 35 + Math.round((job.attemptsUsed / job.maximumAttempts) * 50);
+    return Math.min(91, Math.max(attemptProgress, timeBasedProgress));
+  }
+  if (job.subStage === "validating-candidate") return 72;
+  if (job.subStage === "comparing-result") return 82;
+  if (job.subStage === "selecting-best-output") return 90;
+  if (job.subStage === "finalising-output") return 96;
+
+  const values: Record<PublicCloudJob["state"], number> = {
+    "awaiting-upload": 0,
+    created: 28,
+    queued: 36,
+    validating: 44,
+    processing: Math.max(68, timeBasedProgress),
+    "validating-output": 92,
+    complete: 100,
+    failed: 0,
+    expired: 0,
+    cancelled: 0,
+  };
+  return values[job.state];
+}
+
+function estimatedTimeLabel(job: PublicCloudJob | undefined, uploading: boolean, now: number, startedAt: number | undefined, estimatedTotalSeconds: number) {
+  if (!uploading && !isActiveJob(job)) return undefined;
+  const elapsed = elapsedSeconds(startedAt, now);
+  if (elapsed > estimatedTotalSeconds) return `Elapsed time: ${elapsed} sec. Still working on this PDF.`;
+  return `Estimated total time: about ${estimatedTotalSeconds} sec. Elapsed: ${elapsed} sec.`;
 }
 
 function validatePdf(file: File) {
@@ -94,6 +149,8 @@ export function CompressPdfPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isReady, setIsReady] = useState<boolean | undefined>();
   const [isDraggingUpload, setIsDraggingUpload] = useState(false);
+  const [progressNow, setProgressNow] = useState(() => Date.now());
+  const [workflowStartedAt, setWorkflowStartedAt] = useState<number>();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   usePageMetadata({
@@ -109,7 +166,7 @@ export function CompressPdfPage() {
 
   useEffect(() => {
     if (!job || !jobToken) return undefined;
-    if (["complete", "failed", "expired", "cancelled"].includes(job.state)) return undefined;
+    if (!isActiveJob(job)) return undefined;
     const timer = window.setInterval(() => {
       void getCompressionJob(job.jobId, jobToken)
         .then(({ job: nextJob }) => {
@@ -125,6 +182,12 @@ export function CompressPdfPage() {
     return () => window.clearInterval(timer);
   }, [job, jobToken]);
 
+  useEffect(() => {
+    if (!isUploading && !isActiveJob(job)) return undefined;
+    const timer = window.setInterval(() => setProgressNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [isUploading, job]);
+
   const selectedError = useMemo(() => (file ? validatePdf(file) : ""), [file]);
   const recommendedTarget = useMemo(() => recommendTargetSize(file?.size), [file?.size]);
   const targetBytes = useMemo(() => targetBytesFromInput(targetValue, targetUnit), [targetUnit, targetValue]);
@@ -138,12 +201,18 @@ export function CompressPdfPage() {
     return { mode: "target-size", targetBytes };
   }, [compressionMode, preset, targetBytes, targetError]);
   const canStart = Boolean(file && consent && compressionRequest && !isUploading && (!job || ["failed", "cancelled", "expired"].includes(job.state)));
+  const estimatedTotal = estimateTotalSeconds(file?.size, compressionMode);
+  const progressValue = compressionProgress(job, isUploading, progressNow, workflowStartedAt, estimatedTotal);
+  const timeLabel = estimatedTimeLabel(job, isUploading, progressNow, workflowStartedAt, estimatedTotal);
+  const showProgress = isUploading || Boolean(job);
+  const outputIsLarger = Boolean(job?.compression?.outputLarger);
 
   function selectFile(nextFile?: File) {
     setFile(nextFile ?? null);
     setJob(undefined);
     setJobToken("");
     setError("");
+    setWorkflowStartedAt(undefined);
   }
 
   function openFilePicker() {
@@ -175,6 +244,8 @@ export function CompressPdfPage() {
       return;
     }
     setError("");
+    setProgressNow(Date.now());
+    setWorkflowStartedAt(Date.now());
     setIsUploading(true);
     try {
       const created = await createCompressionJob(compressionRequest);
@@ -208,6 +279,7 @@ export function CompressPdfPage() {
     setJob(undefined);
     setJobToken("");
     setError("");
+    setWorkflowStartedAt(undefined);
   }
 
   return (
@@ -427,13 +499,29 @@ export function CompressPdfPage() {
           </div>
 
           <div className="rounded-xl border p-4" aria-live="polite">
-            <p className="text-sm font-semibold">Status: {stageLabel(job, isUploading)}</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm font-semibold">Status: {stageLabel(job, isUploading)}</p>
+              {showProgress ? <p className="text-sm font-semibold text-primary">{progressValue}%</p> : null}
+            </div>
+            {showProgress ? (
+              <div className="mt-3 space-y-2">
+                <Progress value={progressValue} aria-label={`Estimated compression progress: ${progressValue}%`} />
+                {job?.state !== "complete" && job?.state !== "failed" && job?.state !== "cancelled" && job?.state !== "expired" ? (
+                  <div className="space-y-1 text-xs leading-5 text-muted-foreground">
+                    {timeLabel ? <p className="font-medium text-foreground">{timeLabel}</p> : null}
+                    <p>Estimated progress. Larger or image-heavy PDFs can take longer, so keep this page open until the download is ready.</p>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
             {job?.compression ? (
               <div className="mt-3 grid gap-1 text-sm text-muted-foreground">
                 {job.compression.targetBytes ? <p>Target maximum: {formatFileSize(job.compression.targetBytes)}</p> : null}
                 <p>Original size: {formatFileSize(job.compression.originalBytes)}</p>
-                <p>{job.compression.targetBytes && job.compression.targetMet === false ? "Smallest valid result" : "Compressed size"}: {formatFileSize(job.compression.outputBytes)}</p>
-                {job.compression.targetBytes && job.compression.targetMet === false ? (
+                <p>{outputIsLarger ? "Generated result" : job.compression.targetBytes && job.compression.targetMet === false ? "Smallest valid result" : "Compressed size"}: {formatFileSize(job.compression.outputBytes)}</p>
+                {outputIsLarger ? (
+                  <p className="font-medium text-foreground">No smaller output was created. The generated PDF is larger than the original, so use the original file instead.</p>
+                ) : job.compression.targetBytes && job.compression.targetMet === false ? (
                   <p className="font-medium text-foreground">Target not reached. Paperlane reached the configured quality and safety limits before reaching the requested size.</p>
                 ) : (
                   <p>
@@ -470,7 +558,7 @@ export function CompressPdfPage() {
                   .then(() => setError(""))
                   .catch((downloadError: unknown) => setError(getCloudErrorMessage(downloadError)));
               }}
-              disabled={!job?.canDownload || !jobToken}
+              disabled={!job?.canDownload || !jobToken || outputIsLarger}
             >
               <Download className="h-4 w-4" aria-hidden="true" />Download compressed PDF
             </Button>

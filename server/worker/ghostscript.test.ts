@@ -17,9 +17,15 @@ describe("Ghostscript arguments", () => {
   });
 
   it("uses fixed target-size image settings", () => {
-    const args = buildTargetGhostscriptArgs("/tmp/in.pdf", "/tmp/out.pdf", { dpi: 72, jpegQuality: 60 });
+    const args = buildTargetGhostscriptArgs("/tmp/in.pdf", "/tmp/out.pdf", { dpi: 72, monoDpi: 96, jpegQuality: 60 });
+    expect(args).toContain("-dPDFSETTINGS=/screen");
+    expect(args).toContain("-dAutoFilterColorImages=false");
+    expect(args).toContain("-dAutoFilterGrayImages=false");
+    expect(args).toContain("-dColorImageFilter=/DCTEncode");
+    expect(args).toContain("-dGrayImageFilter=/DCTEncode");
     expect(args).toContain("-dColorImageResolution=72");
     expect(args).toContain("-dGrayImageResolution=72");
+    expect(args).toContain("-dMonoImageResolution=96");
     expect(args).toContain("-dJPEGQ=60");
     expect(args).toContain("-sOutputFile=/tmp/out.pdf");
     expect(args.at(-1)).toBe("/tmp/in.pdf");

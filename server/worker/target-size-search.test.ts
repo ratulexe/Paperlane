@@ -18,7 +18,12 @@ function candidate(outputBytes: number, qualityLabel = "Moderate compression"): 
 describe("target-size candidate search utilities", () => {
   it("caps candidate settings by maximum attempts", () => {
     expect(createCandidateSettings(4)).toHaveLength(4);
-    expect(createCandidateSettings(100)).toHaveLength(14);
+    expect(createCandidateSettings(100)).toHaveLength(20);
+    expect(createCandidateSettings(100).at(-1)).toMatchObject({
+      dpi: 24,
+      monoDpi: 72,
+      jpegQuality: 12,
+    });
   });
 
   it("selects the largest valid output under the target", () => {
@@ -29,10 +34,14 @@ describe("target-size candidate search utilities", () => {
   });
 
   it("falls back to the smallest valid candidate when no candidate reaches the target", () => {
-    const result = selectBestCandidate([candidate(700), candidate(620), candidate(840)], 500);
+    const result = selectBestCandidate([candidate(700), candidate(620), candidate(840)], 500, 900);
     expect(result.targetMet).toBe(false);
     expect(result.selectedCandidate.outputBytes).toBe(620);
     expect(result.smallestCandidate.outputBytes).toBe(620);
+  });
+
+  it("rejects candidates that are larger than the original PDF", () => {
+    expect(() => selectBestCandidate([candidate(700), candidate(620), candidate(840)], 500, 600)).toThrow("No candidate made the PDF smaller");
   });
 
   it("handles non-monotonic candidate sizes and ignores invalid candidates", () => {
