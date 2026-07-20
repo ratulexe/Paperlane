@@ -83,6 +83,51 @@ describe("compression API", () => {
     expect(created.job.compressionRequest).toEqual({ mode: "target-size", targetBytes: 200 * 1024 });
   });
 
+
+  it("creates a token-gated protect PDF job without exposing the password", async () => {
+    const createResponse = await fetch(`${baseUrl}/api/v1/protection-jobs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: "http://localhost:5173" },
+      body: JSON.stringify({ mode: "password", userPassword: "secret1" }),
+    });
+    expect(createResponse.status).toBe(201);
+    expect(createResponse.headers.get("access-control-allow-origin")).toBe("http://localhost:5173");
+    const created = (await createResponse.json()) as { job: { jobId: string; toolType: string; state: string; protectionRequest?: unknown }; jobToken: string };
+    expect(created.job.toolType).toBe("protect-pdf");
+    expect(created.job.state).toBe("awaiting-upload");
+    expect(created.job.protectionRequest).toBeUndefined();
+    expect(JSON.stringify(created.job)).not.toContain("secret1");
+    expect(created.jobToken).toBeTruthy();
+
+    const blocked = await fetch(`${baseUrl}/api/v1/protection-jobs/${created.job.jobId}`, {
+      headers: { "X-Paperlane-Job-Token": "wrong" },
+    });
+    expect(blocked.status).toBe(403);
+
+    const status = await fetch(`${baseUrl}/api/v1/protection-jobs/${created.job.jobId}`, {
+      headers: { "X-Paperlane-Job-Token": created.jobToken },
+    });
+    expect(status.status).toBe(200);
+    const body = (await status.json()) as { job: { toolType: string; protectionRequest?: unknown; canDownload: boolean } };
+    expect(body.job.toolType).toBe("protect-pdf");
+    expect(body.job.protectionRequest).toBeUndefined();
+    expect(body.job.canDownload).toBe(false);
+  });
+
+  it.each([
+    [{ mode: "password", userPassword: "123" }, 400],
+    [{ mode: "password", userPassword: "" }, 400],
+    [{ mode: "password", userPassword: "x".repeat(129) }, 400],
+    [{ mode: "unknown", userPassword: "secret1" }, 400],
+  ])("rejects invalid protection request %#", async (payload, expectedStatus) => {
+    const createResponse = await fetch(`${baseUrl}/api/v1/protection-jobs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    expect(createResponse.status).toBe(expectedStatus);
+  });
+
   it.each([
     [{ mode: "target-size", targetBytes: 12 * 1024 }, 400],
     [{ mode: "target-size", targetBytes: 30 * 1024 * 1024 }, 400],

@@ -1,6 +1,6 @@
 # Paperlane Cloud Processing Architecture
 
-Phase 9 introduces a separate cloud-processing foundation for Compress PDF without moving the existing Vite frontend into a backend app. Phase 9.5 adds target maximum size compression on top of the same API and worker boundary.
+Phase 9 introduces a separate cloud-processing foundation for Compress PDF without moving the existing Vite frontend into a backend app. Phase 9.5 adds target maximum size compression on top of the same API and worker boundary. Phase 10 extends that boundary to Protect PDF password protection.
 
 ## Selected Structure
 
@@ -21,4 +21,4 @@ For target-size jobs, the worker creates several candidate PDFs in the per-job t
 
 ## Current Gate
 
-Docker and Ghostscript end-to-end compression have been verified locally for preset and target-size jobs. Compress PDF appears as a temporary cloud-processing tool when the API and worker service are running. Production deployment still requires retention timing, deployment configuration, monitoring and environment-specific security checks.
+Docker and Ghostscript end-to-end compression have been verified locally for preset and target-size jobs. Compress PDF and Protect PDF appear as temporary cloud-processing tools when the API and worker service are running. Production deployment still requires retention timing, deployment configuration, monitoring and environment-specific security checks.

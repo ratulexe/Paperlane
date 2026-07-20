@@ -21,6 +21,11 @@ async function assertPdfOutput(filePath: string) {
 export async function processCompressionJob(jobId: string, store: FileJobStore, storage: FileStorage, config: ServerConfig) {
   const job = await store.read(jobId);
   if (!job || job.toolType !== "compress-pdf") return;
+  const compressionRequest = job.compressionRequest;
+  if (!compressionRequest) {
+    await store.update(jobId, (current) => ({ ...current, state: "failed", errorCategory: "COMPRESSION_FAILED" }));
+    return;
+  }
   if (!job.inputKey || !job.originalBytes) {
     await store.update(jobId, (current) => ({ ...current, state: "failed", errorCategory: "UPLOAD_FAILED" }));
     return;
@@ -57,19 +62,19 @@ export async function processCompressionJob(jobId: string, store: FileJobStore, 
     const originalPageCount = await getPdfPageCount(inputBytes);
 
     await store.update(jobId, (current) => ({ ...current, state: "processing" }));
-    if (job.compressionRequest.mode === "preset") {
+    if (compressionRequest.mode === "preset") {
       await runGhostscript({
         binary: config.ghostscriptBinary,
         inputPath,
         outputPath,
-        preset: job.compressionRequest.preset,
+        preset: compressionRequest.preset,
         timeoutMs: config.jobTimeoutMs,
         shouldCancel: async () => Boolean((await store.read(jobId))?.cancellationRequested),
       });
     } else {
       const searchStartedAt = Date.now();
       const maximumAttempts = defaultMaximumTargetAttempts;
-      const targetBytes = job.compressionRequest.targetBytes;
+      const targetBytes = compressionRequest.targetBytes;
       await store.update(jobId, (current) => ({
         ...current,
         subStage: "preparing-search",
@@ -133,7 +138,7 @@ export async function processCompressionJob(jobId: string, store: FileJobStore, 
     await storage.deleteInput(job.inputKey);
 
     const outputExpiresAt = new Date(Date.now() + config.outputRetentionMs).toISOString();
-    const targetRequest = job.compressionRequest.mode === "target-size" ? job.compressionRequest : undefined;
+    const targetRequest = compressionRequest.mode === "target-size" ? compressionRequest : undefined;
     await store.update(jobId, (current) => ({
       ...current,
       state: "complete",

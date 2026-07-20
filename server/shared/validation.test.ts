@@ -4,7 +4,9 @@ import {
   calculateCompressionResult,
   calculateTargetCompressionResult,
   parseCompressionRequest,
+  parseProtectionRequest,
   sanitizeFilename,
+  sanitizeProtectedFilename,
   validatePdfUpload,
   validateTargetBelowOriginal,
   validateTargetBytes,
@@ -43,6 +45,7 @@ describe("cloud PDF validation", () => {
 
   it("sanitises output filenames", () => {
     expect(sanitizeFilename("../bad<script>.pdf")).toBe("bad_script_-compressed.pdf");
+    expect(sanitizeProtectedFilename("../bad<script>.pdf")).toBe("bad_script_-protected.pdf");
   });
 
   it("calculates real compression results and larger outputs", () => {
@@ -72,6 +75,20 @@ describe("cloud PDF validation", () => {
       targetBytes: 200 * 1024,
     });
     expect(() => parseCompressionRequest({ mode: "target-size", targetBytes: 2048 }, 25 * 1024 * 1024)).toThrow(PublicApiError);
+  });
+
+  it("parses protect PDF password requests without exposing extra modes", () => {
+    expect(parseProtectionRequest({ mode: "password", userPassword: "secret1" })).toEqual({
+      mode: "password",
+      userPassword: "secret1",
+    });
+    expect(parseProtectionRequest({ protection: { mode: "password", userPassword: "secret1", ownerPassword: "owner1" } })).toEqual({
+      mode: "password",
+      userPassword: "secret1",
+      ownerPassword: "owner1",
+    });
+    expect(() => parseProtectionRequest({ mode: "password", userPassword: "123" })).toThrow(PublicApiError);
+    expect(() => parseProtectionRequest({ mode: "unknown", userPassword: "secret1" })).toThrow(PublicApiError);
   });
 
   it("validates target byte boundaries and original-size comparison", () => {

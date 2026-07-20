@@ -10,7 +10,13 @@ export type CompressionRequest =
       targetBytes: number;
     };
 
-export type CloudToolType = "compress-pdf";
+export type ProtectionRequest = {
+  mode: "password";
+  userPassword: string;
+  ownerPassword?: string;
+};
+
+export type CloudToolType = "compress-pdf" | "protect-pdf";
 
 export type CloudJobState =
   | "created"
@@ -39,6 +45,10 @@ export type PublicErrorCategory =
   | "QUEUE_UNAVAILABLE"
   | "PROCESSING_TIMEOUT"
   | "COMPRESSION_FAILED"
+  | "PROTECTION_FAILED"
+  | "INVALID_PASSWORD"
+  | "PASSWORD_TOO_SHORT"
+  | "PASSWORD_TOO_LONG"
   | "OUTPUT_INVALID"
   | "STORAGE_FAILED"
   | "DOWNLOAD_EXPIRED"
@@ -61,6 +71,10 @@ export type CompressionSubStage =
   | "selecting-best-output"
   | "finalising-output";
 
+export type ProtectionSubStage = "applying-password" | "validating-protected-output" | "finalising-output";
+
+export type CloudJobSubStage = CompressionSubStage | ProtectionSubStage;
+
 export type DeletionState = {
   inputDeleted: boolean;
   outputDeleted: boolean;
@@ -82,13 +96,21 @@ export type CompressionResult = {
   targetDifferenceBytes?: number;
 };
 
+export type ProtectionResult = {
+  originalBytes: number;
+  outputBytes: number;
+  pageCount: number;
+  passwordApplied: boolean;
+};
+
 export type CloudJobRecord = {
   jobId: string;
   tokenHash: string;
   toolType: CloudToolType;
-  compressionRequest: CompressionRequest;
+  compressionRequest?: CompressionRequest;
+  protectionRequest?: ProtectionRequest;
   state: CloudJobState;
-  subStage?: CompressionSubStage;
+  subStage?: CloudJobSubStage;
   createdAt: string;
   updatedAt: string;
   expiresAt: string;
@@ -97,6 +119,7 @@ export type CloudJobRecord = {
   originalBytes?: number;
   outputBytes?: number;
   compression?: CompressionResult;
+  protection?: ProtectionResult;
   targetMet?: boolean;
   attemptsUsed?: number;
   maximumAttempts?: number;
@@ -115,7 +138,7 @@ export type CloudJobRecord = {
   deletion: DeletionState;
 };
 
-export type PublicCloudJob = Omit<CloudJobRecord, "tokenHash" | "inputKey" | "outputKey"> & {
+export type PublicCloudJob = Omit<CloudJobRecord, "tokenHash" | "inputKey" | "outputKey" | "protectionRequest"> & {
   canDownload: boolean;
 };
 
@@ -123,10 +146,17 @@ export type CreateCompressionJobRequest = {
   compression: CompressionRequest;
 } | CompressionRequest;
 
-export type CreateCompressionJobResponse = {
+export type CreateProtectionJobRequest = {
+  protection: ProtectionRequest;
+} | ProtectionRequest;
+
+export type CreateCloudJobResponse = {
   job: PublicCloudJob;
   jobToken: string;
 };
+
+export type CreateCompressionJobResponse = CreateCloudJobResponse;
+export type CreateProtectionJobResponse = CreateCloudJobResponse;
 
 export type ApiErrorResponse = {
   error: {

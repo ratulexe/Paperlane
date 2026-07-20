@@ -67,6 +67,7 @@ export function publicJob(job: CloudJobRecord): PublicCloudJob {
     originalBytes: job.originalBytes,
     outputBytes: job.outputBytes,
     compression: job.compression,
+    protection: job.protection,
     safeOutputFilename: job.safeOutputFilename,
     originalFilename: job.originalFilename,
     errorCategory: job.errorCategory,

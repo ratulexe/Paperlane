@@ -36,7 +36,7 @@ export function ToolsHero({ onBrowseTools, onShowDemo }: ToolsHeroProps) {
         <Alert className="mt-6 max-w-2xl">
           <AlertDescription>
             Nine local tools process selected files in your browser and do not upload them to a Paperlane server.
-            Compress PDF uses explicit temporary cloud processing. Coming-soon tools do not create output files.
+            Compress PDF and Protect PDF use explicit temporary cloud processing. Coming-soon tools do not create output files.
           </AlertDescription>
         </Alert>
       </div>
@@ -46,7 +46,7 @@ export function ToolsHero({ onBrowseTools, onShowDemo }: ToolsHeroProps) {
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-foreground">19 document workflows</p>
-              <p className="text-sm text-muted-foreground">9 local, 1 temporary cloud, 9 coming-soon</p>
+              <p className="text-sm text-muted-foreground">9 local, 2 temporary cloud, 8 coming-soon</p>
             </div>
             <Badge>{tools.length} tools</Badge>
           </div>

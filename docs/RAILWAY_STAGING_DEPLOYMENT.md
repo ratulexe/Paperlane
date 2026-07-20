@@ -112,4 +112,4 @@ After Railway deploys:
 - Railway volume storage is temporary workflow storage only. Paperlane does not provide document history.
 - Files are temporarily uploaded for cloud compression. Browser-local tools remain separate and do not use this service.
 - Target-size compression is best effort and may not reach very small targets.
-- The service currently supports Compress PDF only. It does not add accounts, payments, AI APIs or permanent cloud storage.
+- The service currently supports Compress PDF and Protect PDF. It does not add accounts, payments, AI APIs or permanent cloud storage.

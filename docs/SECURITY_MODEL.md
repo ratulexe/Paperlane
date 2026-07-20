@@ -4,7 +4,7 @@
 
 Paperlane's nine browser-local tools read files in browser memory and do not upload them to a Paperlane server.
 
-Compress PDF uses a separate temporary cloud-processing model because native Ghostscript compression must not run in frontend code.
+Compress PDF and Protect PDF use a separate temporary cloud-processing model because native Ghostscript operations must not run in frontend code.
 
 ## Controls
 

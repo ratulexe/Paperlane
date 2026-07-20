@@ -46,7 +46,7 @@ Use harmless generated files only.
 
 During manual processing, confirm no document upload or generated-output upload requests occur. Normal HTML, CSS, JavaScript, font and PDF worker requests are acceptable.
 
-For Compress PDF, a document upload is expected only after explicit cloud-processing consent and only to the configured Paperlane API.
+For Compress PDF and Protect PDF, a document upload is expected only after explicit cloud-processing consent and only to the configured Paperlane API.
 
 ## Browser Testing
 

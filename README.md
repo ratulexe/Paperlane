@@ -2,7 +2,7 @@
 
 ## Overview
 
-Paperlane is a polished document productivity website for a privacy-conscious workspace concept. It includes selected browser-local PDF tools and an available temporary cloud-processing workflow for Compress PDF, including preset compression and target maximum size attempts.
+Paperlane is a polished document productivity website for a privacy-conscious workspace concept. It includes selected browser-local PDF tools and available temporary cloud-processing workflows for Compress PDF and Protect PDF.
 
 ## Tagline
 
@@ -27,6 +27,7 @@ Privacy-conscious document productivity SaaS concept with selected browser-local
 - Add Watermark: `/add-watermark`
 - Visual Sign PDF: `/visual-sign-pdf`
 - Compress PDF temporary cloud processing: `/compress-pdf`
+- Protect PDF temporary cloud processing: `/protect-pdf`
 - Privacy
 - Contact
 
@@ -36,9 +37,10 @@ Privacy-conscious document productivity SaaS concept with selected browser-local
 - Actual shadcn/ui components
 - 19 document workflows
 - 9 browser-local functional tools
-- 1 temporary cloud-processing Compress PDF tool
+- 2 temporary cloud-processing tools: Compress PDF and Protect PDF
 - 9 clearly labelled coming-soon tools
 - Compress PDF temporary cloud processing with preset and target-size modes
+- Protect PDF temporary cloud processing with password protection
 - Tool search and category filters
 - Reusable workflow Dialog
 - Local PDF processing for merge, split, rotate, reorder, image-to-PDF, PDF-to-image, blank-page review/removal, text watermark and visual-signature tools
@@ -116,15 +118,15 @@ Supported limits:
 
 ## Temporary Cloud Processing Foundation
 
-Compress PDF has a dedicated route, API, worker and Docker setup for temporary cloud processing. It creates token-gated jobs, validates uploads, queues work, runs Ghostscript in the worker, validates output, calculates real byte-size results and supports deletion/expiration.
+Compress PDF and Protect PDF have dedicated routes, API endpoints, worker handling and Docker setup for temporary cloud processing. It creates token-gated jobs, validates uploads, queues work, runs Ghostscript in the worker, validates output, calculates real byte-size results and supports deletion/expiration.
 
 Preset mode offers high quality, balanced and smallest-size options. Target-size mode lets the user enter a maximum size goal; the worker tries several controlled Ghostscript settings, selects the largest valid output at or below the target when possible, and otherwise returns the smallest valid output with a clear target-not-reached result.
 
-The Compress PDF catalogue card is available as a temporary cloud-processing tool when the API and worker service are running.
+The Compress PDF and Protect PDF catalogue cards are available as temporary cloud-processing tools when the API and worker service are running.
 
 ## Railway Staging
 
-Paperlane includes a Railway staging option for the Compress PDF cloud service. Railway does not run `docker-compose.yml` directly, so staging uses one combined container that starts both the API and worker while sharing one mounted Railway volume at `/data/paperlane-cloud`.
+Paperlane includes a Railway staging option for the cloud-processing service. Railway does not run `docker-compose.yml` directly, so staging uses one combined container that starts both the API and worker while sharing one mounted Railway volume at `/data/paperlane-cloud`.
 
 Use `docker/railway-cloud.Dockerfile` as the Railway Dockerfile path and set `VITE_PAPERLANE_API_BASE_URL` in the Vercel frontend to the Railway public domain. See [Railway staging deployment](docs/RAILWAY_STAGING_DEPLOYMENT.md) for setup steps, environment variables and the testing checklist.
 
@@ -136,9 +138,9 @@ The remaining 9 tools are labelled as concept previews and appear as roadmap ite
 
 Paperlane is still a product concept, not a production document platform.
 
-- Compress PDF is available as a temporary cloud-processing workflow when the API, worker, storage and Ghostscript are configured for the target environment
+- Compress PDF and Protect PDF are available as temporary cloud-processing workflows when the API, worker, storage and Ghostscript are configured for the target environment
 - Browser-local tools do not upload files to a Paperlane server
-- Compress PDF requires a separate temporary cloud-processing API and worker when enabled
+- Compress PDF and Protect PDF require a separate temporary cloud-processing API and worker when enabled
 - No document storage or document history
 - No real AI functionality
 - No contact transmission
