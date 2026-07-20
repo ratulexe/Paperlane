@@ -83,12 +83,12 @@ export const processSteps: ProcessStep[] = [
   {
     number: "01",
     title: "Choose a tool",
-    description: "Select a functional local tool or a clearly labelled concept preview.",
+    description: "Select an available tool or a clearly labelled concept preview.",
   },
   {
     number: "02",
     title: "Add your document",
-    description: "Supported tools read the file locally in browser memory.",
+    description: "Local tools read files in browser memory, while Compress PDF explains its temporary cloud-processing step before upload.",
   },
   {
     number: "03",
@@ -98,7 +98,7 @@ export const processSteps: ProcessStep[] = [
   {
     number: "04",
     title: "Download or preview",
-    description: "Functional tools create a real local output. Concept workflows stop after the interface preview.",
+    description: "Available tools create real outputs. Concept workflows stop after the interface preview.",
   },
 ];
 
@@ -158,12 +158,12 @@ export const faqItems: FaqItem[] = [
   {
     question: "Does Paperlane process real documents?",
     answer:
-      "Six PDF tools process selected files locally in your browser. The remaining tools are clearly labelled concept previews and do not create output files.",
+      "Nine PDF tools process selected files locally in your browser, and Compress PDF uses explicit temporary cloud processing. The remaining tools are clearly labelled coming-soon workflows and do not create output files.",
   },
   {
     question: "Which document tools are represented?",
     answer:
-      "Paperlane includes 19 workflows across organisation, conversion, optimisation, security and AI-assisted categories, with six currently functional in the browser.",
+      "Paperlane includes 19 workflows across organisation, conversion, optimisation, security and AI-assisted categories, with 10 currently available tools.",
   },
   {
     question: "Is an account required?",

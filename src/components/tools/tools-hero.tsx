@@ -21,8 +21,8 @@ export function ToolsHero({ onBrowseTools, onShowDemo }: ToolsHeroProps) {
           Everything your documents need, in one lane.
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-          Explore a consistent collection of document workflows, including six browser-local tools and clearly
-          labelled concept previews.
+          Explore a consistent collection of document workflows, including nine browser-local tools, one temporary
+          cloud-processing tool and clearly labelled coming-soon workflows.
         </p>
         <div className="mt-7 flex flex-wrap gap-3">
           <Button onClick={onBrowseTools}>
@@ -35,8 +35,8 @@ export function ToolsHero({ onBrowseTools, onShowDemo }: ToolsHeroProps) {
         </div>
         <Alert className="mt-6 max-w-2xl">
           <AlertDescription>
-            Functional tools process selected files in your browser and do not upload them to a Paperlane server.
-            Concept previews do not create output files.
+            Nine local tools process selected files in your browser and do not upload them to a Paperlane server.
+            Compress PDF uses explicit temporary cloud processing. Coming-soon tools do not create output files.
           </AlertDescription>
         </Alert>
       </div>
@@ -46,7 +46,7 @@ export function ToolsHero({ onBrowseTools, onShowDemo }: ToolsHeroProps) {
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-foreground">19 document workflows</p>
-              <p className="text-sm text-muted-foreground">6 local tools, 13 concept previews</p>
+              <p className="text-sm text-muted-foreground">9 local, 1 temporary cloud, 9 coming-soon</p>
             </div>
             <Badge>{tools.length} tools</Badge>
           </div>

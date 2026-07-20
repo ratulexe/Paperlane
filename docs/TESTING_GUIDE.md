@@ -18,6 +18,13 @@ The automated test suite focuses on deterministic utilities:
 - Watermark position calculation
 - Blank-page detection and removal utility logic
 - Visual signature utility behavior
+- Cloud job token verification
+- Cloud upload validation
+- Cloud compression result calculation
+- Cloud target-size validation and candidate selection
+- Cloud cleanup selection
+- Cloud rate limiting
+- Ghostscript argument construction
 - File display helpers
 
 ## Manual Tool Checks
@@ -33,10 +40,13 @@ Use harmless generated files only.
 - Remove Blank Pages: test suggested blank pages, manual checkbox changes, no-selection rejection and all-pages rejection.
 - Add Watermark: test each position, selected pages, opacity, font-size limits and empty text rejection.
 - Visual Sign PDF: test drawn, typed and uploaded signature flows, page choice, placement and size.
+- Compress PDF: temporary cloud-processing tool. Test API readiness, worker availability, Ghostscript, upload consent, preset choice, target maximum size, reachable and unreachable targets, job states, protected download, delete-now and actual output opening.
 
 ## Network Verification
 
 During manual processing, confirm no document upload or generated-output upload requests occur. Normal HTML, CSS, JavaScript, font and PDF worker requests are acceptable.
+
+For Compress PDF, a document upload is expected only after explicit cloud-processing consent and only to the configured Paperlane API.
 
 ## Browser Testing
 

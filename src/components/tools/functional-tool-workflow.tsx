@@ -79,7 +79,13 @@ type FileSystemFileHandleLike = {
 type WindowWithFilePicker = Window & {
   showOpenFilePicker?: (options?: {
     excludeAcceptAllOption?: boolean;
+    id?: string;
     multiple?: boolean;
+    startIn?: "desktop" | "documents" | "downloads" | "music" | "pictures" | "videos";
+    types?: Array<{
+      description: string;
+      accept: Record<string, string[]>;
+    }>;
   }) => Promise<FileSystemFileHandleLike[]>;
 };
 
@@ -146,7 +152,7 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
   const isRemoveBlankPagesTool = tool.id === "remove-blank-pages";
   const isSignatureTool = tool.id === "sign-document";
   const allowMultiple = tool.id === "merge-pdf" || isImageTool;
-  const accept = isImageTool ? ".jpg,.jpeg,.png" : undefined;
+  const accept = isImageTool ? undefined : ".pdf,application/pdf";
   const canProcess = status !== "validating" && status !== "reading" && status !== "processing" && status !== "preparing-output";
   const chooseFileLabel = isImageTool ? "Select JPG/PNG Images" : "Choose PDF Files";
   const dropzoneTitle = isImageTool ? "Drop JPG/PNG images here" : "Drop PDF files here";
@@ -380,9 +386,22 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
     if (!canProcess) return;
 
     const filePicker = (window as WindowWithFilePicker).showOpenFilePicker;
-
-    if (window.isSecureContext && filePicker) {
-      void filePicker({ excludeAcceptAllOption: false, multiple: allowMultiple })
+    if (isImageTool && window.isSecureContext && filePicker) {
+      void filePicker({
+        id: "paperlane-jpg-to-pdf-downloads-picker",
+        startIn: "downloads",
+        multiple: true,
+        excludeAcceptAllOption: false,
+        types: [
+          {
+            description: "JPG and PNG images",
+            accept: {
+              "image/jpeg": [".jpg", ".jpeg"],
+              "image/png": [".png"],
+            },
+          },
+        ],
+      })
         .then(async (handles) => {
           const pickedFiles = await Promise.all(handles.map((handle) => handle.getFile()));
           await addFiles(pickedFiles);
@@ -663,26 +682,32 @@ export function FunctionalToolWorkflow({ tool, onChooseAnother }: FunctionalTool
         onDrop={handleDrop}
         onPaste={handlePaste}
         className={cn(
-          "group flex min-h-44 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-6 text-center transition-colors",
+          "group flex min-h-52 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-6 text-center transition-all",
           canProcess ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" : "cursor-not-allowed opacity-60",
-          isDraggingFiles ? "border-primary bg-primary/10" : "border-border bg-muted/30 hover:bg-muted/45",
+          isDraggingFiles ? "border-primary bg-primary/10 shadow-sm" : "border-primary/30 bg-gradient-to-b from-secondary/50 to-background hover:border-primary/50 hover:bg-secondary/45",
         )}
       >
-        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm transition-transform group-hover:scale-105">
           <FilePlus2 className="h-6 w-6" aria-hidden="true" />
         </span>
-        <span className="text-base font-semibold text-foreground">{dropzoneTitle}</span>
-        <span className="text-sm text-muted-foreground">Accepted: {acceptedFileSummary}</span>
-        <span className="max-w-sm text-xs leading-5 text-muted-foreground">
-          If Windows disables Open, drag files here or copy them in File Explorer and press Ctrl+V.
+        <span className="text-lg font-semibold text-foreground">{dropzoneTitle}</span>
+        <span className="max-w-sm text-sm leading-6 text-muted-foreground">
+          Click this upload area, drag files here, or paste files from File Explorer.
         </span>
-        <span className="rounded-full border bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm">
-          Click, drop, paste, or press Enter
+        <span className="text-xs text-muted-foreground">Accepted: {acceptedFileSummary}</span>
+        <span className="inline-flex items-center gap-2 rounded-full border bg-background px-4 py-2 text-sm font-semibold text-foreground shadow-sm">
+          <Upload className="h-4 w-4 text-primary" aria-hidden="true" />
+          {chooseFileLabel}
         </span>
       </div>
       <Button type="button" variant="outline" onClick={openFilePicker} disabled={!canProcess}>
-        {chooseFileLabel}
+        Browse from device
       </Button>
+      {isImageTool ? (
+        <p className="rounded-xl border bg-muted/25 p-3 text-sm leading-6 text-muted-foreground">
+          If a Phone Link folder opens empty, choose Downloads &gt; Mobile Devices instead, or drag the images from File Explorer into the upload area.
+        </p>
+      ) : null}
 
       {files.length ? (
         <div className="space-y-2">

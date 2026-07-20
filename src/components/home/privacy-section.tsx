@@ -20,7 +20,7 @@ export function PrivacySection() {
           <ShieldCheck className="h-4 w-4" aria-hidden="true" />
           <AlertDescription className="text-background/82">
             Supported tools process selected files in the browser and do not upload them to a Paperlane server.
-            Concept previews do not process or create output files.
+            Coming-soon tools do not process or create output files.
           </AlertDescription>
         </Alert>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
