@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
-import { ArrowLeft, Download, FilePlus2, ShieldCheck, Trash2, UploadCloud } from "lucide-react";
+import { ArrowLeft, Download, Eye, EyeOff, FilePlus2, ShieldCheck, Trash2, UploadCloud } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -108,6 +108,7 @@ export function ProtectPdfPage() {
   const [file, setFile] = useState<File | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [consent, setConsent] = useState(false);
   const [job, setJob] = useState<PublicCloudJob | undefined>();
   const [jobToken, setJobToken] = useState("");
@@ -215,6 +216,7 @@ export function ProtectPdfPage() {
     setFile(null);
     setPassword("");
     setConfirmPassword("");
+    setShowPassword(false);
     setConsent(false);
     setJob(undefined);
     setJobToken("");
@@ -327,7 +329,35 @@ export function ProtectPdfPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="protect-password">PDF password</Label>
-              <Input id="protect-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" />
+              <div className="relative">
+                <Input
+                  id="protect-password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(event) => {
+                    const nextPassword = event.target.value;
+                    setPassword(nextPassword);
+                    if (!nextPassword) {
+                      setShowPassword(false);
+                    }
+                  }}
+                  autoComplete="new-password"
+                  className={password ? "pr-11" : undefined}
+                />
+                {password ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showPassword ? "Hide PDF password" : "Show PDF password"}
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword((current) => !current)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+                  </Button>
+                ) : null}
+              </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="protect-confirm-password">Confirm password</Label>
@@ -409,4 +439,3 @@ export function ProtectPdfPage() {
     </>
   );
 }
-
