@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 
 function statusVariant(status: string): "default" | "secondary" | "outline" {
   if (status === "Local") return "default";
+  if (status === "Cloud") return "outline";
   if (status === "Concept") return "secondary";
   return "outline";
 }
@@ -34,7 +35,7 @@ export function DashboardPreview() {
     <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 md:py-16">
       <SectionHeading
         title="A consistent workspace for every workflow."
-        description="A later product view showing categories, recent actions, local-processing state and concept status."
+        description="A later product view showing categories, recent actions, local-processing state, temporary cloud status and concept status."
       />
       <Card className="overflow-hidden shadow-sm">
         <CardContent className="grid gap-0 p-0 lg:grid-cols-[180px_minmax(0,1fr)_220px]">

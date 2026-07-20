@@ -374,7 +374,7 @@ export const popularTools: PopularTool[] = homepageToolIds.map((id) => {
       id === "merge-pdf"
         ? "Bring related pages together in one clear workflow."
         : id === "compress-pdf"
-          ? "Preview a smaller sharing workflow without clutter."
+          ? "Run temporary cloud compression with clear consent."
           : id === "pdf-to-word"
             ? "Explore how conversion steps could be presented."
             : id === "jpg-to-pdf"
@@ -393,5 +393,5 @@ export const sidebarItems = ["Overview", "All Documents", "Organise", "Convert",
 export const dashboardRows = [
   { document: "Proposal.pdf", workflow: "Merge PDF", status: "Local", updated: "Just now", icon: FileText },
   { document: "Research.pdf", workflow: "AI Summary", status: "Concept", updated: "4 min ago", icon: Sparkles },
-  { document: "Receipts.zip", workflow: "Compress PDF", status: "Concept", updated: "12 min ago", icon: ArrowDownToLine },
+  { document: "Receipts.zip", workflow: "Compress PDF", status: "Cloud", updated: "12 min ago", icon: ArrowDownToLine },
 ] as const;

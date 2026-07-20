@@ -26,7 +26,7 @@ Privacy-conscious document productivity SaaS concept with selected browser-local
 - Remove Blank Pages: `/remove-blank-pages`
 - Add Watermark: `/add-watermark`
 - Visual Sign PDF: `/visual-sign-pdf`
-- Compress PDF cloud foundation: `/compress-pdf`
+- Compress PDF temporary cloud processing: `/compress-pdf`
 - Privacy
 - Contact
 
@@ -38,7 +38,7 @@ Privacy-conscious document productivity SaaS concept with selected browser-local
 - 9 browser-local functional tools
 - 1 temporary cloud-processing Compress PDF tool
 - 9 clearly labelled coming-soon tools
-- Compress PDF API and worker foundation for temporary cloud processing with preset and target-size modes
+- Compress PDF temporary cloud processing with preset and target-size modes
 - Tool search and category filters
 - Reusable workflow Dialog
 - Local PDF processing for merge, split, rotate, reorder, image-to-PDF, PDF-to-image, blank-page review/removal, text watermark and visual-signature tools
@@ -136,7 +136,7 @@ The remaining 9 tools are labelled as concept previews and appear as roadmap ite
 
 Paperlane is still a product concept, not a production document platform.
 
-- Compress PDF is not marked production-functional until Docker/Ghostscript, retention, deletion and deployment checks are completed for the target environment
+- Compress PDF is available as a temporary cloud-processing workflow when the API, worker, storage and Ghostscript are configured for the target environment
 - Browser-local tools do not upload files to a Paperlane server
 - Compress PDF requires a separate temporary cloud-processing API and worker when enabled
 - No document storage or document history
