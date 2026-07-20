@@ -1,5 +1,6 @@
 services:
   api:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: docker/api.Dockerfile
@@ -26,6 +27,7 @@ services:
       retries: 3
 
   worker:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: docker/worker.Dockerfile

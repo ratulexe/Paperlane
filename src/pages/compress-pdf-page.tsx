@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 import { ArrowLeft, ArrowRight, Download, FilePlus2, Trash2, UploadCloud } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -160,11 +160,22 @@ export function CompressPdfPage() {
     description: "Reduce PDF file size using temporary isolated cloud processing with clear retention and deletion controls.",
   });
 
-  useEffect(() => {
-    void checkCloudReadiness()
-      .then(() => setIsReady(true))
-      .catch(() => setIsReady(false));
+  const refreshCloudReadiness = useCallback(async () => {
+    try {
+      await checkCloudReadiness();
+      setIsReady(true);
+    } catch {
+      setIsReady(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void refreshCloudReadiness();
+    const timer = window.setInterval(() => {
+      void refreshCloudReadiness();
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [refreshCloudReadiness]);
 
   useEffect(() => {
     if (!job || !jobToken) return undefined;
@@ -328,7 +339,7 @@ export function CompressPdfPage() {
               <p><strong className="text-foreground">Retention:</strong> {retentionCopy}</p>
               <p>Keep this page open until your download is ready. Refreshing or closing the page may prevent access to the temporary result.</p>
               {isReady === false ? (
-                <p className="font-medium text-destructive">The local cloud API is not reachable. Start the API and worker before testing compression.</p>
+                <p className="font-medium text-destructive">The cloud API is not reachable. Start Docker Desktop and the API/worker, then Paperlane will reconnect automatically.</p>
               ) : null}
             </CardContent>
           </Card>
