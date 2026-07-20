@@ -15,6 +15,7 @@ const JpgToPdfPage = lazy(() => import("@/pages/jpg-to-pdf-page").then((module) 
 const PdfToJpgPage = lazy(() => import("@/pages/pdf-to-jpg-page").then((module) => ({ default: module.PdfToJpgPage })));
 const RemoveBlankPagesPage = lazy(() => import("@/pages/remove-blank-pages-page").then((module) => ({ default: module.RemoveBlankPagesPage })));
 const CompressPdfPage = lazy(() => import("@/pages/compress-pdf-page").then((module) => ({ default: module.CompressPdfPage })));
+const ProtectPdfPage = lazy(() => import("@/pages/protect-pdf-page").then((module) => ({ default: module.ProtectPdfPage })));
 const AddWatermarkPage = lazy(() => import("@/pages/add-watermark-page").then((module) => ({ default: module.AddWatermarkPage })));
 const VisualSignPdfPage = lazy(() => import("@/pages/visual-sign-pdf-page").then((module) => ({ default: module.VisualSignPdfPage })));
 const PrivacyPage = lazy(() => import("@/pages/privacy-page").then((module) => ({ default: module.PrivacyPage })));
@@ -39,6 +40,8 @@ export default function App() {
           <Route path="/remove-blank-pages" element={<RemoveBlankPagesPage />} />
           <Route path="/compress-pdf" element={<CompressPdfPage />} />
           <Route path="/tools/compress-pdf" element={<CompressPdfPage />} />
+          <Route path="/protect-pdf" element={<ProtectPdfPage />} />
+          <Route path="/tools/protect-pdf" element={<ProtectPdfPage />} />
           <Route path="/add-watermark" element={<AddWatermarkPage />} />
           <Route path="/visual-sign-pdf" element={<VisualSignPdfPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />

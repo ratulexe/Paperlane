@@ -4,6 +4,7 @@ import { FileJobQueue } from "../shared/file-queue.js";
 import { FileJobStore } from "../shared/job-store.js";
 import { FileStorage } from "../shared/storage.js";
 import { processCompressionJob } from "./process-compression.js";
+import { processProtectionJob } from "./process-protection.js";
 
 const config = loadServerConfig();
 const storage = new FileStorage(config.storageRoot);
@@ -30,6 +31,11 @@ while (!shuttingDown) {
     await new Promise((resolve) => setTimeout(resolve, config.workerPollMs));
     continue;
   }
-  await processCompressionJob(claimed.jobId, store, storage, config);
+  const job = await store.read(claimed.jobId);
+  if (job?.toolType === "protect-pdf") {
+    await processProtectionJob(claimed.jobId, store, storage, config);
+  } else {
+    await processCompressionJob(claimed.jobId, store, storage, config);
+  }
   await queue.acknowledge(claimed.receiptPath);
 }

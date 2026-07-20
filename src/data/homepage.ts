@@ -88,7 +88,7 @@ export const processSteps: ProcessStep[] = [
   {
     number: "02",
     title: "Add your document",
-    description: "Local tools read files in browser memory, while Compress PDF explains its temporary cloud-processing step before upload.",
+    description: "Local tools read files in browser memory, while Compress PDF and Protect PDF explain temporary cloud-processing before upload.",
   },
   {
     number: "03",
@@ -158,7 +158,7 @@ export const faqItems: FaqItem[] = [
   {
     question: "Does Paperlane process real documents?",
     answer:
-      "Nine PDF tools process selected files locally in your browser, and Compress PDF uses explicit temporary cloud processing. The remaining tools are clearly labelled coming-soon workflows and do not create output files.",
+      "Nine PDF tools process selected files locally in your browser, while Compress PDF and Protect PDF use explicit temporary cloud processing. The remaining tools are clearly labelled coming-soon workflows and do not create output files.",
   },
   {
     question: "Which document tools are represented?",

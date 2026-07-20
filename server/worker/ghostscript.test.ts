@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildGhostscriptArgs, buildTargetGhostscriptArgs } from "./ghostscript.js";
+import { buildGhostscriptArgs, buildProtectGhostscriptArgs, buildTargetGhostscriptArgs } from "./ghostscript.js";
 
 describe("Ghostscript arguments", () => {
   it("uses a fixed argument array and preset mapping", () => {
@@ -28,6 +28,18 @@ describe("Ghostscript arguments", () => {
     expect(args).toContain("-dMonoImageResolution=96");
     expect(args).toContain("-dJPEGQ=60");
     expect(args).toContain("-sOutputFile=/tmp/out.pdf");
+    expect(args.at(-1)).toBe("/tmp/in.pdf");
+  });
+
+  it("uses Ghostscript-supported PDF password protection settings", () => {
+    const args = buildProtectGhostscriptArgs("/tmp/in.pdf", "/tmp/out.pdf", "secret123");
+    expect(args).toContain("-dCompatibilityLevel=1.4");
+    expect(args).toContain("-dEncryptionR=3");
+    expect(args).toContain("-dKeyLength=128");
+    expect(args).toContain("-sOwnerPassword=secret123");
+    expect(args).toContain("-sUserPassword=secret123");
+    expect(args).toContain("-sOutputFile=/tmp/out.pdf");
+    expect(args).not.toContain("-dEncryptionR=4");
     expect(args.at(-1)).toBe("/tmp/in.pdf");
   });
 });

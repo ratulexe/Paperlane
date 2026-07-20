@@ -5,7 +5,7 @@
 - Node.js 22 or compatible modern Node runtime.
 - Docker with Docker Compose for real worker verification.
 
-Docker with Ghostscript is required for real Compress PDF verification.
+Docker with Ghostscript is required for real Compress PDF and Protect PDF verification.
 
 ## Frontend
 

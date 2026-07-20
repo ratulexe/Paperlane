@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { PublicApiError } from "../shared/errors.js";
 import { compressionPresets } from "../shared/validation.js";
-import type { CompressionPreset } from "../shared/types.js";
+import type { CompressionPreset, PublicErrorCategory } from "../shared/types.js";
 
 export type TargetGhostscriptSettings = {
   dpi: number;
@@ -58,13 +58,32 @@ export function buildTargetGhostscriptArgs(inputPath: string, outputPath: string
   ];
 }
 
+export function buildProtectGhostscriptArgs(inputPath: string, outputPath: string, userPassword: string, ownerPassword?: string) {
+  return [
+    "-sDEVICE=pdfwrite",
+    "-dCompatibilityLevel=1.4",
+    "-dEncryptionR=3",
+    "-dKeyLength=128",
+    "-dNOPAUSE",
+    "-dQUIET",
+    "-dBATCH",
+    "-dSAFER",
+    `-sOwnerPassword=${ownerPassword || userPassword}`,
+    `-sUserPassword=${userPassword}`,
+    `-sOutputFile=${outputPath}`,
+    inputPath,
+  ];
+}
+
 export function runGhostscriptWithArgs(options: {
   binary: string;
   args: string[];
   timeoutMs: number;
   shouldCancel?: () => Promise<boolean>;
+  failureCategory?: PublicErrorCategory;
 }) {
   return new Promise<void>((resolve, reject) => {
+    const failureCategory = options.failureCategory ?? "COMPRESSION_FAILED";
     const child = spawn(options.binary, options.args, {
       windowsHide: true,
       stdio: ["ignore", "ignore", "pipe"],
@@ -98,10 +117,10 @@ export function runGhostscriptWithArgs(options: {
     child.stderr.on("data", (chunk: Buffer) => {
       stderr += chunk.toString("utf8").slice(0, 400);
     });
-    child.on("error", () => finish(new PublicApiError("COMPRESSION_FAILED", "Ghostscript failed.", 500)));
+    child.on("error", () => finish(new PublicApiError(failureCategory, "Ghostscript failed.", 500)));
     child.on("close", (code) => {
       if (code === 0) finish();
-      else finish(new PublicApiError("COMPRESSION_FAILED", stderr || "Ghostscript exited with an error.", 500));
+      else finish(new PublicApiError(failureCategory, stderr || "Ghostscript exited with an error.", 500));
     });
   });
 }
@@ -121,3 +140,23 @@ export function runGhostscript(options: {
     shouldCancel: options.shouldCancel,
   });
 }
+
+export function runProtectPdf(options: {
+  binary: string;
+  inputPath: string;
+  outputPath: string;
+  userPassword: string;
+  ownerPassword?: string;
+  timeoutMs: number;
+  shouldCancel?: () => Promise<boolean>;
+}) {
+  return runGhostscriptWithArgs({
+    binary: options.binary,
+    args: buildProtectGhostscriptArgs(options.inputPath, options.outputPath, options.userPassword, options.ownerPassword),
+    timeoutMs: options.timeoutMs,
+    shouldCancel: options.shouldCancel,
+    failureCategory: "PROTECTION_FAILED",
+  });
+}
+
+

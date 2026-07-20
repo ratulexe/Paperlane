@@ -1,11 +1,16 @@
 import path from "node:path";
 import { PDFDocument } from "pdf-lib";
 import { PublicApiError } from "./errors.js";
-import type { CompressionPreset, CompressionRequest, CompressionResult } from "./types.js";
+import type { CompressionPreset, CompressionRequest, CompressionResult, ProtectionRequest } from "./types.js";
 
 export const targetSizeLimits = {
   minimumBytes: 50 * 1024,
   maximumBytes: 20 * 1024 * 1024,
+};
+
+export const protectionPasswordLimits = {
+  minimumCharacters: 6,
+  maximumCharacters: 128,
 };
 
 export const compressionPresets: Record<CompressionPreset, { label: string; pdfSettings: string }> = {
@@ -72,10 +77,49 @@ export function validateTargetBelowOriginal(targetBytes: number, originalBytes: 
   }
 }
 
-export function sanitizeFilename(filename: string) {
+function sanitizePdfFilename(filename: string, suffix: "compressed" | "protected") {
   const base = path.basename(filename).replace(/[^\w .()-]/g, "_").trim();
   const withoutExtension = base.replace(/\.pdf$/i, "") || "paperlane-document";
-  return `${withoutExtension.slice(0, 90)}-compressed.pdf`;
+  return `${withoutExtension.slice(0, 90)}-${suffix}.pdf`;
+}
+
+export function sanitizeFilename(filename: string) {
+  return sanitizePdfFilename(filename, "compressed");
+}
+
+export function sanitizeProtectedFilename(filename: string) {
+  return sanitizePdfFilename(filename, "protected");
+}
+
+export function validateProtectionPassword(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new PublicApiError("INVALID_PASSWORD", "Invalid password.", 400);
+  }
+  if (value.length < protectionPasswordLimits.minimumCharacters) {
+    throw new PublicApiError("PASSWORD_TOO_SHORT", "Password too short.", 400);
+  }
+  if (value.length > protectionPasswordLimits.maximumCharacters) {
+    throw new PublicApiError("PASSWORD_TOO_LONG", "Password too long.", 400);
+  }
+  return value;
+}
+
+export function parseProtectionRequest(body: unknown): ProtectionRequest {
+  if (typeof body !== "object" || body === null) {
+    throw new PublicApiError("INVALID_STATE", "Missing protection mode.", 400);
+  }
+
+  const record = body as Record<string, unknown>;
+  const candidate = typeof record.protection === "object" && record.protection !== null ? record.protection as Record<string, unknown> : record;
+  if (candidate.mode !== "password") {
+    throw new PublicApiError("INVALID_STATE", "Unsupported protection mode.", 400);
+  }
+
+  const userPassword = validateProtectionPassword(candidate.userPassword);
+  const ownerPassword = candidate.ownerPassword === undefined || candidate.ownerPassword === ""
+    ? undefined
+    : validateProtectionPassword(candidate.ownerPassword);
+  return { mode: "password", userPassword, ownerPassword };
 }
 
 export function validatePdfUpload(input: {

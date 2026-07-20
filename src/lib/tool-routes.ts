@@ -9,6 +9,7 @@ export const functionalToolRoutes = {
   "pdf-to-jpg": "/pdf-to-jpg",
   "remove-blank-pages": "/remove-blank-pages",
   "compress-pdf": "/compress-pdf",
+  "protect-pdf": "/protect-pdf",
   "add-watermark": "/add-watermark",
   "sign-document": "/visual-sign-pdf",
 } as const satisfies Partial<Record<DocumentTool["id"], string>>;

@@ -64,13 +64,13 @@ export const transparencyRows = [
     dataType: "File content",
     why: "Required only for the chosen document action.",
     approach: "Clearly communicate processing location and retention behaviour.",
-    status: "Browser-local tools read selected file bytes locally. Compress PDF uploads only after explicit temporary cloud-processing consent when the API and worker are running.",
+    status: "Browser-local tools read selected file bytes locally. Compress PDF and Protect PDF upload only after explicit temporary cloud-processing consent when the API and worker are running.",
   },
   {
     dataType: "Cloud job metadata",
     why: "Required to queue, process, expire and delete temporary cloud-processing jobs.",
     approach: "Use random job IDs, token-gated access, timestamps, file sizes, preset, state, duration, public error category and deletion state.",
-    status: "Implemented for the Compress PDF temporary cloud-processing workflow; no account history is created.",
+    status: "Implemented for the Compress PDF and Protect PDF temporary cloud-processing workflows; no account history is created.",
   },
   {
     dataType: "Account information",
@@ -111,7 +111,7 @@ export const privacyFaqItems = [
   {
     question: "Does Paperlane upload selected files?",
     answer:
-      "Browser-local tools do not upload selected files. Compress PDF uploads one PDF only after explicit temporary cloud-processing consent when the separate API and worker services are running.",
+      "Browser-local tools do not upload selected files. Compress PDF and Protect PDF upload one PDF only after explicit temporary cloud-processing consent when the separate API and worker services are running.",
   },
   {
     question: "Does Paperlane store selected documents?",

@@ -23,7 +23,7 @@ export function ToolsPage() {
   usePageMetadata({
     title: "Document Tools | Paperlane",
     description:
-      "Explore Paperlane's browser-local PDF tools, temporary cloud-processing Compress PDF workflow and concept previews for document organisation, conversion, optimisation, AI and security workflows.",
+      "Explore Paperlane's browser-local PDF tools, temporary cloud-processing Compress PDF and Protect PDF workflows and concept previews for document organisation, conversion, optimisation, AI and security workflows.",
   });
 
   const filteredTools = useMemo(() => {
@@ -67,7 +67,7 @@ export function ToolsPage() {
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-primary">Tool catalogue</p>
           <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Choose a document workflow.</h2>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-            Filter, search and open each available workflow, including browser-local tools and the temporary cloud-processing Compress PDF tool.
+            Filter, search and open each available workflow, including browser-local tools and the temporary cloud-processing Compress PDF and Protect PDF tools.
           </p>
         </div>
         <ToolFilterBar

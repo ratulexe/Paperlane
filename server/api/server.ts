@@ -6,8 +6,16 @@ import { FileStorage } from "../shared/storage.js";
 import { loadServerConfig, type ServerConfig } from "../shared/config.js";
 import { PublicApiError, publicMessage } from "../shared/errors.js";
 import { createId, createToken, hashToken, tokenMatches } from "../shared/ids.js";
-import { parseCompressionRequest, sanitizeFilename, validatePdfReadable, validatePdfUpload, validateTargetBelowOriginal } from "../shared/validation.js";
-import type { CloudJobRecord, CreateCompressionJobRequest } from "../shared/types.js";
+import {
+  parseCompressionRequest,
+  parseProtectionRequest,
+  sanitizeFilename,
+  sanitizeProtectedFilename,
+  validatePdfReadable,
+  validatePdfUpload,
+  validateTargetBelowOriginal,
+} from "../shared/validation.js";
+import type { CloudJobRecord, CloudToolType, CreateCompressionJobRequest, CreateProtectionJobRequest } from "../shared/types.js";
 import { cleanupJob, cleanupProcessingQueueEntries, shouldDeleteCompletedOutput, shouldExpireJob } from "../shared/cleanup.js";
 import { getClientIp, publicJob, readBodyWithLimit, readJson, requestId, sendError, sendJson } from "./http-utils.js";
 
@@ -26,9 +34,10 @@ function requireToken(request: http.IncomingMessage) {
   return token;
 }
 
-async function getAuthorisedJob(store: FileJobStore, jobId: string, token: string) {
+async function getAuthorisedJob(store: FileJobStore, jobId: string, token: string, expectedToolType?: CloudToolType) {
   const job = await store.read(jobId);
   if (!job) throw new PublicApiError("JOB_NOT_FOUND", publicMessage("JOB_NOT_FOUND"), 404);
+  if (expectedToolType && job.toolType !== expectedToolType) throw new PublicApiError("JOB_NOT_FOUND", publicMessage("JOB_NOT_FOUND"), 404);
   if (!tokenMatches(token, job.tokenHash)) {
     throw new PublicApiError("UNAUTHORISED_JOB", publicMessage("UNAUTHORISED_JOB"), 403);
   }
@@ -56,6 +65,29 @@ async function runCleanup(store: FileJobStore, storage: FileStorage, queue: File
       .map((job) => cleanupJob(job, store, storage)),
   );
   await cleanupProcessingQueueEntries(queue, store, storage);
+}
+
+function makeBaseJob(input: { toolType: CloudToolType; tokenHash: string; now: Date; expiresAt: string }): Omit<CloudJobRecord, "jobId"> {
+  return {
+    tokenHash: input.tokenHash,
+    toolType: input.toolType,
+    state: "awaiting-upload",
+    createdAt: input.now.toISOString(),
+    updatedAt: input.now.toISOString(),
+    expiresAt: input.expiresAt,
+    inputExpiresAt: input.expiresAt,
+    attemptCount: 0,
+    cancellationRequested: false,
+    deletion: { inputDeleted: false, outputDeleted: false, localFilesDeleted: false },
+  };
+}
+
+function routeToToolType(pathname: string) {
+  const compressionMatch = pathname.match(/^\/api\/v1\/compression-jobs\/([^/]+)(?:\/([^/]+))?$/);
+  if (compressionMatch) return { toolType: "compress-pdf" as const, jobId: compressionMatch[1], action: compressionMatch[2] };
+  const protectionMatch = pathname.match(/^\/api\/v1\/protection-jobs\/([^/]+)(?:\/([^/]+))?$/);
+  if (protectionMatch) return { toolType: "protect-pdf" as const, jobId: protectionMatch[1], action: protectionMatch[2] };
+  return undefined;
 }
 
 export async function createApiServer(dependencies: ApiDependencies = {}) {
@@ -105,33 +137,43 @@ export async function createApiServer(dependencies: ApiDependencies = {}) {
         const expiresAt = new Date(now.getTime() + config.inputRetentionMs).toISOString();
         const job: CloudJobRecord = {
           jobId,
-          tokenHash: hashToken(token),
-          toolType: "compress-pdf",
+          ...makeBaseJob({ toolType: "compress-pdf", tokenHash: hashToken(token), now, expiresAt }),
           compressionRequest,
-          state: "awaiting-upload",
-          createdAt: now.toISOString(),
-          updatedAt: now.toISOString(),
-          expiresAt,
-          inputExpiresAt: expiresAt,
-          attemptCount: 0,
-          cancellationRequested: false,
-          deletion: { inputDeleted: false, outputDeleted: false, localFilesDeleted: false },
         };
         await store.create(job);
         sendJson(response, 201, { job: publicJob(job), jobToken: token });
         return;
       }
 
-      const jobMatch = url.pathname.match(/^\/api\/v1\/compression-jobs\/([^/]+)(?:\/([^/]+))?$/);
-      if (!jobMatch) {
+      if (request.method === "POST" && url.pathname === "/api/v1/protection-jobs") {
+        if (!createLimiter.check(`create:${getClientIp(request)}`)) {
+          throw new PublicApiError("RATE_LIMITED", publicMessage("RATE_LIMITED"), 429);
+        }
+        const body = await readJson<CreateProtectionJobRequest>(request);
+        const protectionRequest = parseProtectionRequest(body);
+        const now = new Date();
+        const jobId = createId("job");
+        const token = createToken();
+        const expiresAt = new Date(now.getTime() + config.inputRetentionMs).toISOString();
+        const job: CloudJobRecord = {
+          jobId,
+          ...makeBaseJob({ toolType: "protect-pdf", tokenHash: hashToken(token), now, expiresAt }),
+          protectionRequest,
+        };
+        await store.create(job);
+        sendJson(response, 201, { job: publicJob(job), jobToken: token });
+        return;
+      }
+
+      const route = routeToToolType(url.pathname);
+      if (!route) {
         throw new PublicApiError("JOB_NOT_FOUND", publicMessage("JOB_NOT_FOUND"), 404);
       }
 
-      const [, jobId, action] = jobMatch;
       const token = requireToken(request);
-      const job = await getAuthorisedJob(store, jobId, token);
+      const job = await getAuthorisedJob(store, route.jobId, token, route.toolType);
 
-      if (request.method === "POST" && action === "upload") {
+      if (request.method === "POST" && route.action === "upload") {
         if (!uploadLimiter.check(`upload:${getClientIp(request)}`)) {
           throw new PublicApiError("RATE_LIMITED", publicMessage("RATE_LIMITED"), 429);
         }
@@ -143,24 +185,25 @@ export async function createApiServer(dependencies: ApiDependencies = {}) {
         const mimeType = typeof request.headers["content-type"] === "string" ? request.headers["content-type"] : "";
         validatePdfUpload({ filename, mimeType, bytes, maxUploadBytes: config.maxUploadBytes });
         await validatePdfReadable(bytes);
-        if (job.compressionRequest.mode === "target-size") {
+        if (job.toolType === "compress-pdf" && job.compressionRequest?.mode === "target-size") {
           validateTargetBelowOriginal(job.compressionRequest.targetBytes, bytes.length);
         }
         const inputKey = storage.createInputKey(job.jobId);
         await storage.putInput(inputKey, bytes);
+        const safeOutputFilename = job.toolType === "protect-pdf" ? sanitizeProtectedFilename(filename) : sanitizeFilename(filename);
         const updated = await store.update(job.jobId, (current) => ({
           ...current,
           state: "created",
           inputKey,
           originalBytes: bytes.length,
-          originalFilename: sanitizeFilename(filename).replace(/-compressed\.pdf$/i, ".pdf"),
-          safeOutputFilename: sanitizeFilename(filename),
+          originalFilename: safeOutputFilename.replace(/-(compressed|protected)\.pdf$/i, ".pdf"),
+          safeOutputFilename,
         }));
         sendJson(response, 200, { job: publicJob(updated ?? job) });
         return;
       }
 
-      if (request.method === "POST" && action === "start") {
+      if (request.method === "POST" && route.action === "start") {
         if (job.state === "queued" || job.state === "processing" || job.state === "validating" || job.state === "validating-output") {
           throw new PublicApiError("JOB_ALREADY_STARTED", publicMessage("JOB_ALREADY_STARTED"), 409);
         }
@@ -173,12 +216,12 @@ export async function createApiServer(dependencies: ApiDependencies = {}) {
         return;
       }
 
-      if (request.method === "GET" && !action) {
+      if (request.method === "GET" && !route.action) {
         sendJson(response, 200, { job: publicJob(job) });
         return;
       }
 
-      if (request.method === "GET" && action === "download") {
+      if (request.method === "GET" && route.action === "download") {
         if (job.state !== "complete" || !job.outputKey || !job.outputExpiresAt) {
           throw new PublicApiError("INVALID_STATE", publicMessage("INVALID_STATE"), 409);
         }
@@ -187,19 +230,20 @@ export async function createApiServer(dependencies: ApiDependencies = {}) {
         }
         response.writeHead(200, {
           "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename="${job.safeOutputFilename ?? "paperlane-compressed.pdf"}"`,
+          "Content-Disposition": `attachment; filename="${job.safeOutputFilename ?? (job.toolType === "protect-pdf" ? "paperlane-protected.pdf" : "paperlane-compressed.pdf")}"`,
           "Cache-Control": "no-store",
         });
         storage.getOutputStream(job.outputKey).pipe(response);
         return;
       }
 
-      if (request.method === "DELETE" && !action) {
+      if (request.method === "DELETE" && !route.action) {
         const isInFlight = job.state === "processing" || job.state === "validating" || job.state === "validating-output";
         const updated = await store.update(job.jobId, (current) => ({
           ...current,
           state: isInFlight ? current.state : "cancelled",
           cancellationRequested: true,
+          protectionRequest: current.toolType === "protect-pdf" && !isInFlight ? undefined : current.protectionRequest,
           errorCategory: undefined,
         }));
         if (!isInFlight) await cleanupJob(updated ?? job, store, storage);

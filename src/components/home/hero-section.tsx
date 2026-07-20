@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 const capabilityItems = [
   { label: "9 browser-local tools", icon: CheckCircle2 },
-  { label: "1 temporary cloud tool", icon: Sparkles },
+  { label: "2 temporary cloud tools", icon: Sparkles },
   { label: "No server upload for local tools", icon: ShieldCheck },
 ];
 
